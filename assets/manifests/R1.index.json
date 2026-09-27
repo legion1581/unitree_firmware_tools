@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "robot": "R1",
+  "folder_link": "https://disk.yandex.com/d/-iEE_zjNr-0Byg",
+  "targets": [
+    "master_service",
+    "basic_service_check",
+    "basic_service",
+    "net-init"
+  ],
+  "note": "General manifest: lets the tool pick the right package when the device's firmware version is not one it has a specific package for, by matching the on-disk md5 of the 4 targets against each version's vanilla (original_md5) or patched md5 set. Many versions share byte-identical binaries; any member of a matching group installs correctly.",
+  "versions": [
+    {
+      "firmware": "1.4.2",
+      "package_id": "unitree_secondary_dev_r1_1.4.2",
+      "zip": "unitree_secondary_dev_r1_1.4.2_v1.zip",
+      "zip_md5": "978ec5406542a5ecc2c44bd5e6d5213f",
+      "zip_size": 13605772,
+      "manifest": "R1_1.4.2.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "b7cab5026e9adc6a333f8e19925815c7",
+          "patched_md5": "df892a31dcf477f272e94a697e3e8544"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "9826f1fd45eff531bafeedda6d97561c",
+          "patched_md5": "ab35ac825b60e98c38599c242357d8fe"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    }
+  ]
+}

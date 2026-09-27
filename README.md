@@ -27,11 +27,22 @@ loss** resulting from its use.
 | **G1** | ✅ supported | **1.4.0**, **1.4.5**, **1.5.3**, **1.5.4** |
 | **Go2** | ✅ supported | **1.1.2**, **1.1.3**, **1.1.4**, **1.1.6**, **1.1.7**, **1.1.11**, **1.1.14**, **1.1.15** |
 
-Each firmware has its own md5-verified package (patched + factory originals + `manifest.json`).
-The tool reads the robot's real firmware version and picks the matching package automatically.
-Many patched binaries are shared across versions (e.g. `master_service` is byte-identical
-across all three robots, and `net-init` / `basic_service_check` are shared within a robot
-family), but every package is fully self-contained so it can be installed offline.
+Each firmware has its own md5-verified package (patched + factory originals + `manifest.json`),
+uploaded to a per-model Yandex Disk folder (`config.MODEL_FOLDERS`). Many patched binaries are
+shared across versions (e.g. `master_service` is byte-identical across all three robots, and
+`net-init` / `basic_service_check` are shared within a robot family), but every package is fully
+self-contained so it can be installed offline (`--package <dir|zip>`).
+
+**How the right package is chosen.** Each model ships a *general manifest*,
+`assets/manifests/<Robot>.index.json`, listing every packaged version with, per target file, its
+vanilla and patched md5. The tool selects a package:
+1. **by firmware version** — the fast path (`version.json` matches a package); else
+2. **by md5 fingerprint** — it reads the 4 target files on the robot and finds the version whose
+   *vanilla* md5 set matches (secondary-dev not yet enabled) or whose *patched* set matches
+   (already enabled). So a robot on a firmware we don't explicitly package still gets the correct
+   package whenever its service binaries are byte-for-byte one we do — which, given how often
+   Unitree re-ships identical binaries, covers most in-between releases. The chosen package is then
+   md5-gated at install as usual, so a wrong guess simply refuses rather than mispatches.
 
 > **Editions:** these are the **EDU / Pro** secondary-dev packages. The tool reads the robot's
 > edition from its identity (`sn[4]`) and refuses to touch a file whose md5 isn't the known
@@ -106,10 +117,11 @@ cd unitree_firmware_tools && pip install -r requirements.txt
 ## Layout
 `core/` (yandex download, md5-gated install/backup engine, OTA-style `service_control`),
 `platforms/` (R1/G1/Go2 identity + paths), `features/` (info, secondary_dev, supervisor),
-`assets/` (guardian service + per-platform `service_stop/` OTA order + bundled per-version manifests).
-The patch packages themselves (patched + factory binaries, `manifest.json`, zip) are built on the
-emulation bench and staged under `orange_pi_workbench/packages/<robot>/<ver>/`; each zip is uploaded
-to Yandex Disk and its public link + md5 registered in `config.py`.
+`assets/` (guardian service + per-platform `service_stop/` OTA order + per-version manifests +
+per-model `*.index.json` general manifests). The patch packages themselves (patched + factory
+binaries, `manifest.json`, zip) are built on the emulation bench and staged under
+`orange_pi_workbench/packages/<robot>/<ver>/`; each zip is uploaded to its model's Yandex Disk
+folder (`config.MODEL_FOLDERS`) and listed in that model's `assets/manifests/<Robot>.index.json`.
 
 ### Thanks
 To the RoboLegion community! Visit [robolegion.com](https://robolegion.com) for info and support.

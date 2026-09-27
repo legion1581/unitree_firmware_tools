@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "robot": "G1",
+  "folder_link": "https://disk.yandex.com/d/VvehFZm7ZAj-Pg",
+  "targets": [
+    "master_service",
+    "basic_service_check",
+    "basic_service",
+    "net-init"
+  ],
+  "note": "General manifest: lets the tool pick the right package when the device's firmware version is not one it has a specific package for, by matching the on-disk md5 of the 4 targets against each version's vanilla (original_md5) or patched md5 set. Many versions share byte-identical binaries; any member of a matching group installs correctly.",
+  "versions": [
+    {
+      "firmware": "1.4.0",
+      "package_id": "unitree_secondary_dev_g1_1.4.0",
+      "zip": "unitree_secondary_dev_g1_1.4.0_v1.zip",
+      "zip_md5": "f33af6c7532381639fc9cd763d0ec79e",
+      "zip_size": 14756367,
+      "manifest": "G1_1.4.0.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "4d2bc437a0a89701ab47d71ac036eda6",
+          "patched_md5": "0ef5b7c655dee391b03c72584c31ac42"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "581694cf882e8f822d7546de307dad6d",
+          "patched_md5": "93db12d933d5ce3f7a6dc3db4a60272b"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.4.5",
+      "package_id": "unitree_secondary_dev_g1_1.4.5",
+      "zip": "unitree_secondary_dev_g1_1.4.5_v1.zip",
+      "zip_md5": "ccb9695a68de3e6ec7821f828d5f47ba",
+      "zip_size": 15180357,
+      "manifest": "G1_1.4.5.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "4d2bc437a0a89701ab47d71ac036eda6",
+          "patched_md5": "0ef5b7c655dee391b03c72584c31ac42"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "8a4cb301bb845623cb184df8c44eb1ed",
+          "patched_md5": "1f1ba517ddf243666350a8c45c1dd070"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.5.3",
+      "package_id": "unitree_secondary_dev_g1_1.5.3",
+      "zip": "unitree_secondary_dev_g1_1.5.3_v1.zip",
+      "zip_md5": "c04296105563c398f42df4cfa5963b01",
+      "zip_size": 13855353,
+      "manifest": "G1_1.5.3.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "4d2bc437a0a89701ab47d71ac036eda6",
+          "patched_md5": "0ef5b7c655dee391b03c72584c31ac42"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "107a070cdcc6b200478372574f5250df",
+          "patched_md5": "83ff19bd6122d118b60f79b8638e2f02"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "d5b4497a6458e522bc27da5e502edee2",
+          "patched_md5": "745632b409da17b322db5340ae6e0706"
+        }
+      }
+    },
+    {
+      "firmware": "1.5.4",
+      "package_id": "unitree_secondary_dev_g1_1.5.4",
+      "zip": "unitree_secondary_dev_g1_1.5.4_v1.zip",
+      "zip_md5": "f34215e4f2a931d890c43164bad5df30",
+      "zip_size": 13855353,
+      "manifest": "G1_1.5.4.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "4d2bc437a0a89701ab47d71ac036eda6",
+          "patched_md5": "0ef5b7c655dee391b03c72584c31ac42"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "107a070cdcc6b200478372574f5250df",
+          "patched_md5": "83ff19bd6122d118b60f79b8638e2f02"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "d5b4497a6458e522bc27da5e502edee2",
+          "patched_md5": "745632b409da17b322db5340ae6e0706"
+        }
+      }
+    }
+  ]
+}

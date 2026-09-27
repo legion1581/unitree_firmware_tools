@@ -1,0 +1,254 @@
+{
+  "schema": 1,
+  "robot": "Go2",
+  "folder_link": "https://disk.yandex.com/d/5aSwXn-0wTPhwQ",
+  "targets": [
+    "master_service",
+    "basic_service_check",
+    "basic_service",
+    "net-init"
+  ],
+  "note": "General manifest: lets the tool pick the right package when the device's firmware version is not one it has a specific package for, by matching the on-disk md5 of the 4 targets against each version's vanilla (original_md5) or patched md5 set. Many versions share byte-identical binaries; any member of a matching group installs correctly.",
+  "versions": [
+    {
+      "firmware": "1.1.2",
+      "package_id": "unitree_secondary_dev_go2_1.1.2",
+      "zip": "unitree_secondary_dev_go2_1.1.2_v1.zip",
+      "zip_md5": "88ec9819223904d5649ef36e0d95ccc7",
+      "zip_size": 14706112,
+      "manifest": "Go2_1.1.2.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "326072268c73fd33a0f1995c2159221b",
+          "patched_md5": "b7699aed4ce3536c08cf9fe233e8a7ac"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.1.3",
+      "package_id": "unitree_secondary_dev_go2_1.1.3",
+      "zip": "unitree_secondary_dev_go2_1.1.3_v1.zip",
+      "zip_md5": "f2f8fd41e7f68a8953e599c1860906fa",
+      "zip_size": 14706112,
+      "manifest": "Go2_1.1.3.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "326072268c73fd33a0f1995c2159221b",
+          "patched_md5": "b7699aed4ce3536c08cf9fe233e8a7ac"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.1.4",
+      "package_id": "unitree_secondary_dev_go2_1.1.4",
+      "zip": "unitree_secondary_dev_go2_1.1.4_v1.zip",
+      "zip_md5": "06afbb2705623b51abf345d60218dc21",
+      "zip_size": 14706112,
+      "manifest": "Go2_1.1.4.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "326072268c73fd33a0f1995c2159221b",
+          "patched_md5": "b7699aed4ce3536c08cf9fe233e8a7ac"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.1.6",
+      "package_id": "unitree_secondary_dev_go2_1.1.6",
+      "zip": "unitree_secondary_dev_go2_1.1.6_v1.zip",
+      "zip_md5": "1834e63c4b3919cf03cf33b1554e1e58",
+      "zip_size": 14706112,
+      "manifest": "Go2_1.1.6.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "326072268c73fd33a0f1995c2159221b",
+          "patched_md5": "b7699aed4ce3536c08cf9fe233e8a7ac"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.1.7",
+      "package_id": "unitree_secondary_dev_go2_1.1.7",
+      "zip": "unitree_secondary_dev_go2_1.1.7_v1.zip",
+      "zip_md5": "659623fdd1bffc5818cb300b356873a4",
+      "zip_size": 14706112,
+      "manifest": "Go2_1.1.7.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "326072268c73fd33a0f1995c2159221b",
+          "patched_md5": "b7699aed4ce3536c08cf9fe233e8a7ac"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.1.11",
+      "package_id": "unitree_secondary_dev_go2_1.1.11",
+      "zip": "unitree_secondary_dev_go2_1.1.11_v1.zip",
+      "zip_md5": "55b50aaa31fbec7cace6a76ec4b80851",
+      "zip_size": 13276161,
+      "manifest": "Go2_1.1.11.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "a04c7ccda925c7f043bd30fa30fea836",
+          "patched_md5": "235a8b83314defef42900c051045ab7a"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.1.14",
+      "package_id": "unitree_secondary_dev_go2_1.1.14",
+      "zip": "unitree_secondary_dev_go2_1.1.14_v1.zip",
+      "zip_md5": "b7f8230cfd416fc69a478af22e4c13e6",
+      "zip_size": 13276161,
+      "manifest": "Go2_1.1.14.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "a04c7ccda925c7f043bd30fa30fea836",
+          "patched_md5": "235a8b83314defef42900c051045ab7a"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
+      "firmware": "1.1.15",
+      "package_id": "unitree_secondary_dev_go2_1.1.15",
+      "zip": "unitree_secondary_dev_go2_1.1.15_v1.zip",
+      "zip_md5": "1fbd7b52f4d4074f09012cbb54b24302",
+      "zip_size": 13276161,
+      "manifest": "Go2_1.1.15.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+          "patched_md5": "bd2565aa7a8df6eba4abe14b729c7ddf"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "a04c7ccda925c7f043bd30fa30fea836",
+          "patched_md5": "235a8b83314defef42900c051045ab7a"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    }
+  ]
+}

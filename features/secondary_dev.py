@@ -16,7 +16,7 @@ import os
 import tempfile
 
 import config
-from core import installer, secdev, service_control, yandex
+from core import installer, secdev, selector, service_control, yandex
 from . import supervisor
 
 
@@ -42,17 +42,30 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST_DIR = os.path.join(REPO, "assets", "manifests")
 
 
-def local_manifest(platform, firmware):
-    """Load the manifest bundled in the tool (offline status/preflight)."""
-    # exact match first, then any manifest for the platform
-    exact = os.path.join(MANIFEST_DIR, f"{platform}_{firmware}.json")
-    path = exact if os.path.isfile(exact) else None
-    if not path:
-        cand = sorted(glob.glob(os.path.join(MANIFEST_DIR, f"{platform}_*.json")))
-        path = cand[-1] if cand else None
-    if not path:
-        return None
-    return installer.load_manifest(path)
+def _load_manifest_file(name):
+    path = os.path.join(MANIFEST_DIR, name)
+    return installer.load_manifest(path) if os.path.isfile(path) else None
+
+
+def local_manifest(robot):
+    """Load the bundled manifest that matches the robot in front of us.
+
+    Uses the model's general manifest (selector) to pick the version by firmware
+    string, or by md5 fingerprint when the reported version has no package. Falls
+    back to a direct <Platform>_<firmware>.json, then to the newest bundled one.
+    """
+    platform = robot.platform
+    sel = selector.select(robot)
+    if sel:
+        m = _load_manifest_file(sel["entry"]["manifest"])
+        if m:
+            return m
+    fw = robot.firmware_version()[0]
+    exact = os.path.join(MANIFEST_DIR, f"{platform}_{fw}.json")
+    if os.path.isfile(exact):
+        return installer.load_manifest(exact)
+    cand = sorted(glob.glob(os.path.join(MANIFEST_DIR, f"{platform}_*.json")))
+    return installer.load_manifest(cand[-1]) if cand else None
 
 
 def status(robot, probe_lowcmd=True):
@@ -65,7 +78,14 @@ def status(robot, probe_lowcmd=True):
     """
     verdict = secdev.detect(robot, probe_lowcmd=probe_lowcmd)
     files = None
-    m = local_manifest(robot.platform, robot.firmware_version()[0])
+    try:
+        sel = selector.select(robot)
+        if sel:
+            how = "version match" if sel["how"] == "version" else "md5 fingerprint"
+            verdict["signals"]["package"] = f"{robot.platform} {sel['entry']['firmware']} ({how})"
+    except Exception:
+        pass
+    m = local_manifest(robot)
     if m:
         try:
             files = installer.Installer(root=robot.root).status(m)[1]
@@ -75,8 +95,12 @@ def status(robot, probe_lowcmd=True):
 
 
 def resolve_package(robot, local=None, log=print):
-    """Return (pkg_dir, manifest, cleanup_dir_or_None). Downloads if needed."""
-    fw = robot.firmware_version()[0]
+    """Return (pkg_dir, manifest, cleanup_dir_or_None). Downloads if needed.
+
+    Without --package, the package is chosen from the model's general manifest
+    (by firmware version, or by md5 fingerprint if that version has no dedicated
+    package) and pulled from the model's Yandex folder link.
+    """
     cleanup = None
     if local:
         if os.path.isdir(local):
@@ -86,18 +110,41 @@ def resolve_package(robot, local=None, log=print):
             yandex.extract_zip(local, pkg_dir)
         else:
             raise ValueError("--package must be a directory or a .zip")
+        manifest = installer.load_manifest(os.path.join(pkg_dir, "manifest.json"))
+        return pkg_dir, manifest, cleanup
+
+    fw = robot.firmware_version()[0]
+    index = selector.load_index(robot.platform)
+    if not index:
+        raise ValueError(
+            f"no general manifest for {robot.platform} (assets/manifests/{robot.platform}.index.json). "
+            "Install from a local package with --package <dir|zip>.")
+    sel = selector.select(robot, index=index)
+    if not sel:
+        raise ValueError(
+            f"no package matches {robot.platform} firmware {fw or '?'}: it is not a packaged "
+            "version and its on-disk service binaries match no known vanilla/patched set. "
+            "Install from a local package with --package <dir|zip>.")
+    entry = sel["entry"]
+    if sel["how"] == "fingerprint":
+        log(f"Firmware {fw or '?'} has no dedicated package; matched {robot.platform} "
+            f"{entry['firmware']} by md5 fingerprint ({sel['state'] or 'binaries'}"
+            + (f"; also matches {', '.join(v for v in sel['matches'] if v != entry['firmware'])}"
+               if len(sel["matches"]) > 1 else "") + ").")
     else:
-        pk = config.package_for(robot.platform, fw)
-        if not pk or not pk.get("zip_link"):
-            raise ValueError(
-                f"no download link configured for {robot.platform} {fw}. "
-                "Upload the package to Yandex and set config.PACKAGES, or pass a local "
-                "package with --package <dir|zip>.")
-        os.makedirs(config.DOWNLOAD_DIR, exist_ok=True)
-        log("Downloading package…")
-        zpath = yandex.download(pk["zip_link"], config.DOWNLOAD_DIR, expect_md5=pk.get("zip_md5"))
-        pkg_dir = tempfile.mkdtemp(prefix="fwtools_pkg_"); cleanup = pkg_dir
-        yandex.extract_zip(zpath, pkg_dir)
+        log(f"Selected {robot.platform} {entry['firmware']} package (by firmware version).")
+
+    folder = config.folder_for(robot.platform) or index.get("folder_link")
+    if not folder:
+        raise ValueError(
+            f"no Yandex folder link for {robot.platform} (set config.MODEL_FOLDERS). "
+            "Install from a local package with --package <dir|zip>.")
+    os.makedirs(config.DOWNLOAD_DIR, exist_ok=True)
+    log(f"Downloading {entry['zip']}…")
+    zpath = yandex.download(folder, config.DOWNLOAD_DIR, path="/" + entry["zip"],
+                            expect_md5=entry.get("zip_md5"), filename=entry["zip"])
+    pkg_dir = tempfile.mkdtemp(prefix="fwtools_pkg_"); cleanup = pkg_dir
+    yandex.extract_zip(zpath, pkg_dir)
     manifest = installer.load_manifest(os.path.join(pkg_dir, "manifest.json"))
     return pkg_dir, manifest, cleanup
 
