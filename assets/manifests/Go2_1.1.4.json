@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "robot": "Go2",
+  "firmware": "1.1.4",
+  "package_id": "unitree_secondary_dev_go2_1.1.4",
+  "package_version": 1,
+  "created": "2026-09-27T19:30:35Z",
+  "title": "Go2 1.1.4 secondary development",
+  "description": "Secondary development enablement package for Go2 firmware 1.1.4.",
+  "reboot_required": true,
+  "has_factory": true,
+  "deploy_order": [
+    "master_service",
+    "basic_service_check",
+    "basic_service",
+    "net-init"
+  ],
+  "files": [
+    {
+      "name": "master_service",
+      "dest": "/unitree/module/master_service/master_service",
+      "mode": "0755",
+      "patched": {
+        "path": "patched/master_service",
+        "md5": "7994ab1ed91be212e15fa10ae741f6bf",
+        "size": 20571720
+      },
+      "original_md5": "3be0730d733addd1c144297033087d96",
+      "factory": {
+        "path": "factory/master_service",
+        "md5": "3be0730d733addd1c144297033087d96",
+        "size": 9241288
+      }
+    },
+    {
+      "name": "basic_service_check",
+      "dest": "/unitree/robot/tool/basic_service_check",
+      "mode": "0755",
+      "patched": {
+        "path": "patched/basic_service_check",
+        "md5": "bd2565aa7a8df6eba4abe14b729c7ddf",
+        "size": 3899528
+      },
+      "original_md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+      "factory": {
+        "path": "factory/basic_service_check",
+        "md5": "c5444ac1c861fbd8d8aa4644fc167bdc",
+        "size": 2012744
+      }
+    },
+    {
+      "name": "basic_service",
+      "dest": "/unitree/module/basic_service/basic_service",
+      "mode": "0755",
+      "patched": {
+        "path": "patched/basic_service",
+        "md5": "b7699aed4ce3536c08cf9fe233e8a7ac",
+        "size": 10554968
+      },
+      "original_md5": "326072268c73fd33a0f1995c2159221b",
+      "factory": {
+        "path": "factory/basic_service",
+        "md5": "326072268c73fd33a0f1995c2159221b",
+        "size": 5029976
+      }
+    },
+    {
+      "name": "net-init",
+      "dest": "/unitree/etc/master_service/cmd/net-init",
+      "mode": "0644",
+      "patched": {
+        "path": "patched/net-init",
+        "md5": "a9fabb08bd693c191f188663f938ca1a",
+        "size": 651
+      },
+      "original_md5": "3897de817eab709df623b795e99235b7",
+      "factory": {
+        "path": "factory/net-init",
+        "md5": "3897de817eab709df623b795e99235b7",
+        "size": 693
+      }
+    }
+  ]
+}

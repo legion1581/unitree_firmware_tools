@@ -1,0 +1,13 @@
+{
+  "_source": "package_1.4.0_G1_Air_Edu Install.CmdPreList/CmdPostList (verbatim order)",
+  "mscli": "/unitree/sbin/mscli",
+  "expect_ok": [0, 1, 108, 120],
+  "stop_order": [
+    "ai_sport", "ai_sport_task_social", "auto_test_arm", "auto_test_low",
+    "chat_go", "dex3_service_l", "dex3_service_r", "motion_switcher",
+    "basic_service", "bashrunner", "robot_state",
+    "webrtc_bridge", "webrtc_multicast_responder", "webrtc_signal_server",
+    "net_switcher"
+  ],
+  "post": ["pkill -f '/bin/login -p --'"]
+}

@@ -21,13 +21,21 @@ loss** resulting from its use.
 
 ## Supported
 
-| Robot | Status |
-|---|---|
-| **R1** | ✅ supported — firmware **1.4.2** |
-| **G1** | 🚧 on the way |
-| **Go2** | 🚧 on the way |
+| Robot | Status | Firmware versions |
+|---|---|---|
+| **R1** | ✅ supported | **1.4.2** |
+| **G1** | ✅ supported | **1.4.0**, **1.4.5**, **1.5.3**, **1.5.4** |
+| **Go2** | ✅ supported | **1.1.2**, **1.1.3**, **1.1.4**, **1.1.6**, **1.1.7**, **1.1.11**, **1.1.14**, **1.1.15** |
 
-More R1 firmware versions plus G1 / Go2 support are coming.
+Each firmware has its own md5-verified package (patched + factory originals + `manifest.json`).
+The tool reads the robot's real firmware version and picks the matching package automatically.
+Many patched binaries are shared across versions (e.g. `master_service` is byte-identical
+across all three robots, and `net-init` / `basic_service_check` are shared within a robot
+family), but every package is fully self-contained so it can be installed offline.
+
+> **Editions:** these are the **EDU / Pro** secondary-dev packages. The tool reads the robot's
+> edition from its identity (`sn[4]`) and refuses to touch a file whose md5 isn't the known
+> vanilla one for that firmware, so an unexpected edition/version simply won't install.
 
 ## Run
 
@@ -98,8 +106,10 @@ cd unitree_firmware_tools && pip install -r requirements.txt
 ## Layout
 `core/` (yandex download, md5-gated install/backup engine, OTA-style `service_control`),
 `platforms/` (R1/G1/Go2 identity + paths), `features/` (info, secondary_dev, supervisor),
-`assets/` (guardian service + `service_stop/` OTA order + bundled manifests).
-The R1 patch package is built by `secondary_development_patch/package_r1.py` → `out/r1/`.
+`assets/` (guardian service + per-platform `service_stop/` OTA order + bundled per-version manifests).
+The patch packages themselves (patched + factory binaries, `manifest.json`, zip) are built on the
+emulation bench and staged under `orange_pi_workbench/packages/<robot>/<ver>/`; each zip is uploaded
+to Yandex Disk and its public link + md5 registered in `config.py`.
 
 ### Thanks
 To the RoboLegion community! Visit [robolegion.com](https://robolegion.com) for info and support.

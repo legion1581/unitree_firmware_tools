@@ -1,0 +1,14 @@
+{
+  "_source": "package_1.1.15_GO2_Edu_Max_Pro_X Install.CmdPreList/CmdPostList (verbatim order; the OTA's non-stopservice `basic_demarcate Start_Move_zero_position` motion step is intentionally omitted — we stop to patch, not to move)",
+  "mscli": "/unitree/sbin/mscli",
+  "expect_ok": [0, 1, 108, 120],
+  "stop_order": [
+    "sport_mode", "advanced_sport", "ai_sport", "motion_switcher",
+    "basic_service", "audio_hub", "bashrunner", "chat_go", "robot_state",
+    "obstacles_avoid", "utrack", "unitree_lidar", "unitree_lidar_slam",
+    "video_hub", "voxel_height_mapping", "vui_service",
+    "webrtc_bridge", "webrtc_multicast_responder", "webrtc_signal_server",
+    "net_switcher"
+  ],
+  "post": ["pkill -f '/bin/login -p --'"]
+}
