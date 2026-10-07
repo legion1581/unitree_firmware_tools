@@ -51,7 +51,7 @@ Install on the robot (you're root after the jailbreak):
 
 ```bash
 mkdir -p /unitree/dev && cd /unitree/dev
-git clone https://github.com/legion1581/unitree_firmware_tools.git
+git clone -b v2 https://github.com/legion1581/unitree_firmware_tools.git
 cd unitree_firmware_tools && pip install -r requirements.txt
 ./start.sh
 ```
