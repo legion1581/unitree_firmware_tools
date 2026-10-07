@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unitree Firmware Tools</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<script>
+  // apply the saved theme before first paint
+  try{ const t = localStorage.getItem("fwtools-theme"); if(t==="light"||t==="dark") document.documentElement.dataset.theme = t; }catch(e){}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f1f0ec; --surface:#ffffff; --sunken:#f7f6f3; --ink:#17191c; --muted:#6b7077; --faint:#9a9ea4;
+    --line:#dedcd6; --line-strong:#c7c4bc;
+    --accent:#d9480f; --accent-ink:#ffffff; --accent-soft:rgba(217,72,15,.10);
+    --ok:#2f8a46; --bad:#c62f2f; --warn:#b7791f;
+    --term-bg:#111315; --term-ink:#d9d7d1; --term-dim:#7d828a;
+    --sans:"IBM Plex Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#121416; --surface:#1a1d20; --sunken:#16181b; --ink:#e7e5e0; --muted:#8e939a; --faint:#62676e;
+      --line:#2a2e33; --line-strong:#3a3f45;
+      --accent:#ff7a3d; --accent-ink:#1a0d05; --accent-soft:rgba(255,122,61,.12);
+      --ok:#58b36c; --bad:#ec645c; --warn:#e0a43a;
+      --term-bg:#0c0d0f; color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#121416; --surface:#1a1d20; --sunken:#16181b; --ink:#e7e5e0; --muted:#8e939a; --faint:#62676e;
+    --line:#2a2e33; --line-strong:#3a3f45;
+    --accent:#ff7a3d; --accent-ink:#1a0d05; --accent-soft:rgba(255,122,61,.12);
+    --ok:#58b36c; --bad:#ec645c; --warn:#e0a43a;
+    --term-bg:#0c0d0f; color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+  .mono{font-family:var(--mono)}
+  .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}.dim{color:var(--muted)}
+  svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--faint);flex:none}
+  .dot.ok{background:var(--ok)}.dot.bad{background:var(--bad)}.dot.warn{background:var(--warn)}
+
+  /* ---------- header ---------- */
+  header{background:var(--surface);border-bottom:1px solid var(--line)}
+  .bar{max-width:1040px;margin:0 auto;padding:0 20px;display:flex;align-items:center;gap:16px;height:56px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.01em;white-space:nowrap}
+  .mark{width:22px;height:22px;background:var(--accent);position:relative;flex:none;border-radius:3px}
+  .mark::after{content:"";position:absolute;right:4px;bottom:4px;width:8px;height:8px;background:var(--surface);border-radius:1px}
+  .brand small{font-weight:400;color:var(--muted)}
+  .readout{margin-left:auto;display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;font:12.5px var(--mono)}
+  .readout span{display:flex;align-items:center;gap:6px;padding:5px 10px;border-left:1px solid var(--line);white-space:nowrap;background:var(--sunken)}
+  .readout span:first-child{border-left:none}
+  .iconbtn{border:1px solid var(--line);background:var(--surface);color:var(--muted);width:32px;height:32px;border-radius:6px;
+    display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .iconbtn:hover{color:var(--ink);border-color:var(--line-strong)}
+  nav{max-width:1040px;margin:0 auto;padding:0 20px;display:flex;gap:4px;overflow-x:auto}
+  nav a{padding:10px 12px 11px;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;font-weight:500}
+  nav a:hover{color:var(--ink)}
+  nav a.on{color:var(--ink);border-bottom-color:var(--accent)}
+
+  /* ---------- layout ---------- */
+  main{max-width:1040px;margin:0 auto;padding:22px 20px 48px}
+  section{display:none}section.on{display:block}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:760px){ .grid{grid-template-columns:1fr} .readout span.hide-sm{display:none} .brand .bt{display:none} .bar{gap:10px;padding:0 14px} }
+  .panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;margin-bottom:16px}
+  .panel>.hd{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .panel>.hd h3{margin:0;font-size:13.5px;font-weight:600}
+  .panel>.hd .sub{color:var(--muted);font-size:12.5px}
+  .panel>.hd .right{margin-left:auto;display:flex;align-items:center;gap:10px}
+  .panel>.bd{padding:14px 16px}
+  .note{color:var(--muted);font-size:13px}
+  p{margin:0 0 8px}p:last-child{margin-bottom:0}
+  #err{color:var(--bad);font:12.5px var(--mono);margin-bottom:10px}
+  #err:empty{display:none}
+
+  dl.kv{display:grid;grid-template-columns:130px 1fr;margin:0;row-gap:0}
+  dl.kv dt,dl.kv dd{padding:7px 0;border-bottom:1px solid var(--line);margin:0}
+  dl.kv dt{color:var(--muted)}
+  dl.kv dd{font-family:var(--mono);font-size:13px;word-break:break-word;white-space:pre-line}
+  dl.kv dt:nth-last-child(2),dl.kv dd:last-child{border-bottom:none}
+
+  /* ---------- controls ---------- */
+  button{font:500 13px var(--sans);padding:6px 12px;border:1px solid var(--line-strong);border-radius:6px;
+    background:var(--surface);color:var(--ink);cursor:pointer}
+  button:hover:not(:disabled){border-color:var(--ink)}
+  button:disabled{opacity:.5;cursor:default}
+  button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+  button.primary:hover:not(:disabled){filter:brightness(1.05);border-color:var(--accent)}
+  button.danger{color:var(--bad)}
+  button.danger:hover:not(:disabled){border-color:var(--bad)}
+  button.ghost{border-color:transparent;background:transparent;color:var(--muted);padding:4px}
+  button.ghost:hover:not(:disabled){color:var(--ink);border-color:transparent}
+  button.spin svg{animation:spin .9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  input[type=password],input[type=text],input[type=number]{font:13px var(--sans);padding:7px 10px;background:var(--sunken);
+    color:var(--ink);border:1px solid var(--line-strong);border-radius:6px;outline:none}
+  input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  label.chk{display:inline-flex;gap:8px;align-items:center;font-size:13px;cursor:pointer}
+  input[type=checkbox]{accent-color:var(--accent);width:15px;height:15px}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .row+.row{margin-top:10px}
+
+  /* ---------- secondary development ---------- */
+  .toggle{display:flex;align-items:center;gap:18px;padding:20px 16px}
+  .sw{position:relative;width:58px;height:32px;border-radius:16px;border:1px solid var(--line-strong);background:var(--sunken);
+    cursor:pointer;flex:none;padding:0;transition:background .15s,border-color .15s}
+  .sw::after{content:"";position:absolute;top:3px;left:3px;width:24px;height:24px;border-radius:50%;background:var(--faint);transition:left .15s,background .15s}
+  .sw.on{background:var(--ok);border-color:var(--ok)}
+  .sw.on.pending,.sw.on.pending:hover:not(:disabled){background:var(--warn);border-color:var(--warn)}
+  .sw.on::after{left:29px;background:#fff}
+  .sw:hover:not(:disabled){border-color:var(--ink)}
+  .sw.on:hover:not(:disabled){border-color:var(--ok)}
+  .sw:disabled{cursor:default;opacity:.6}
+  .sw.sm{width:44px;height:24px;border-radius:12px}
+  .sw.sm::after{top:2px;left:2px;width:18px;height:18px}
+  .sw.sm.on::after{left:22px}
+  .svcstate{display:flex;align-items:center;gap:8px;margin-bottom:8px;font:13px var(--mono)}
+  .toggle .state{font-size:18px;font-weight:600;letter-spacing:-.01em}
+  .toggle .state b{font-weight:600}
+  .toggle .note{margin-top:2px}
+  .confirm{margin:0 16px 16px;border:1px solid var(--warn);border-left-width:4px;border-radius:6px;padding:12px 14px;background:var(--sunken);display:none}
+  .confirm p{margin-bottom:10px}
+  .callout{margin:0 16px 16px;border-left:4px solid var(--warn);background:var(--sunken);padding:10px 14px;border-radius:0 6px 6px 0;display:none}
+  pre.log{margin:0 16px 16px;background:var(--term-bg);color:var(--term-ink);border-radius:6px;padding:12px 14px;
+    font:12px/1.5 var(--mono);max-height:320px;overflow:auto;white-space:pre-wrap;display:none}
+  .checks{list-style:none;margin:0;padding:0}
+  .checks li{display:grid;grid-template-columns:14px 1fr auto;gap:4px 10px;align-items:baseline;padding:10px 16px;border-bottom:1px solid var(--line)}
+  .checks li:last-child{border-bottom:none}
+  .checks .dot{transform:translateY(-1px)}
+  .checks .lb{font-weight:500}
+  .checks .val{font:500 13px var(--mono);text-align:right;white-space:nowrap}
+  .checks .nt{grid-column:2 / 4;color:var(--muted);font-size:12.5px;margin-top:-2px}
+
+  /* ---------- services ---------- */
+  .legend{display:flex;gap:14px;font-size:12px;color:var(--muted);align-items:center}
+  .legend span{display:inline-flex;gap:6px;align-items:center}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;padding:14px 16px}
+  .tile{display:flex;align-items:center;gap:9px;padding:8px 10px;border:1px solid var(--line);border-radius:6px;cursor:pointer;background:var(--surface);min-width:0}
+  .tile:hover{border-color:var(--ink)}
+  .tile .nm{font:12.5px var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tile .v{margin-left:auto;font:11px var(--mono);color:var(--faint);white-space:nowrap}
+  .tile.off .nm{color:var(--muted)}
+  .svcwarn{margin:14px 16px 0;color:var(--warn);font-size:13px}
+
+  /* ---------- backup ---------- */
+  .parts{list-style:none;margin:0;padding:0}
+  .parts li{display:grid;grid-template-columns:22px 70px 1fr auto auto;gap:4px 14px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line)}
+  .parts li:last-child{border-bottom:none}
+  .parts .nm{font:500 13px var(--mono)}
+  .parts .ds{color:var(--muted);font-size:13px}
+  .parts .dv{font:12.5px var(--mono);color:var(--muted);text-align:right;white-space:nowrap}
+  .parts .miss{color:var(--bad);font-size:13px}
+  .parts a{font-size:13px;color:var(--accent);text-decoration:none;white-space:nowrap}
+  .parts a:hover{text-decoration:underline}
+  .parts li.off .nm{color:var(--muted)}
+  @media (max-width:760px){ .parts li{grid-template-columns:22px 60px 1fr auto} .parts .dv{display:none} }
+  .ft{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
+
+  /* ---------- console ---------- */
+  .term{background:var(--term-bg);border-radius:0 0 8px 8px;color:var(--term-ink)}
+  .term pre{margin:0;height:56vh;overflow:auto;padding:14px 16px;font:12.5px/1.5 var(--mono);white-space:pre-wrap}
+  .term pre .p{color:var(--accent)}
+  .term pre .c{color:#fff;font-weight:500}
+  .term pre .e{color:#ec645c}
+  .term .in{display:flex;align-items:center;gap:8px;border-top:1px solid #23272b;padding:8px 12px}
+  .term .in span{color:var(--accent);font:13px var(--mono)}
+  .term .in input{flex:1;min-width:0;background:transparent;border:none;color:var(--term-ink);font:13px var(--mono);padding:6px 2px;box-shadow:none}
+  .term .in input::placeholder{color:var(--term-dim)}
+  .term .in button{background:transparent;color:var(--term-ink);border-color:#3a3f45}
+  .term .in button:hover{border-color:var(--term-ink)}
+
+  /* ---------- modal ---------- */
+  .modal{position:fixed;inset:0;background:rgba(10,11,12,.55);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+  .modal.on{display:flex}
+  .modal .box{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--warn);border-radius:8px;
+    max-width:440px;width:100%;padding:22px 24px}
+  .modal h3{margin:0 0 10px;font-size:17px;letter-spacing:-.01em}
+  .modal ol{margin:0 0 16px;padding-left:20px}
+  .modal ol li{margin:4px 0}
+  .modal .row{justify-content:flex-end}
+
+  /* ---------- login ---------- */
+  #login{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px}
+  #login .card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:28px}
+  #login .brand{margin-bottom:22px}
+  #login label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  #login input{width:100%;margin-bottom:14px}
+  #login form button{width:100%;padding:9px}
+  #loginErr{color:var(--bad);font-size:13px;min-height:1.3em;margin:10px 0 0}
+  #login .note{margin-top:16px;font-size:12.5px}
+  #login .theme{position:fixed;top:14px;right:14px}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-sun" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 16 16"><path d="M13.5 9.5A5.5 5.5 0 0 1 6.5 2.5a5.5 5.5 0 1 0 7 7z"/></symbol>
+  <symbol id="i-auto" viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M8 2.5v11" /><path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 16 16"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3"/></symbol>
+  <symbol id="i-robot" viewBox="0 0 16 16"><rect x="3" y="4.5" width="10" height="8" rx="1.5"/><path d="M8 2v2.5M6 8.5h.01M10 8.5h.01"/></symbol>
+  <symbol id="i-chip" viewBox="0 0 16 16"><rect x="4" y="4" width="8" height="8" rx="1"/><path d="M6.5 2v2M9.5 2v2M6.5 12v2M9.5 12v2M2 6.5h2M2 9.5h2M12 6.5h2M12 9.5h2"/></symbol>
+  <symbol id="i-out" viewBox="0 0 16 16"><path d="M6 2.5H3.5v11H6M10 5l3 3-3 3M13 8H6.5"/></symbol>
+</svg>
+
+<!-- LOGIN -->
+<div id="login">
+  <button class="iconbtn theme" onclick="cycleTheme()" title="theme"><svg class="i"><use class="theme-ic" href="#i-auto"/></svg></button>
+  <div class="card">
+    <div class="brand"><span class="mark"></span>Unitree Firmware Tools</div>
+    <form onsubmit="login(event)">
+      <label for="pw">Password</label>
+      <input type="password" id="pw" autocomplete="current-password" autofocus>
+      <button type="submit" class="primary">Log in</button>
+      <p id="loginErr"></p>
+    </form>
+    <p class="note">Forgot it? Run <span class="mono">./start.sh --reset-password</span> on the robot.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" style="display:none">
+<header>
+  <div class="bar">
+    <div class="brand"><span class="mark"></span><span class="bt">Unitree Firmware Tools</span></div>
+    <div class="readout" title="robot · firmware · secondary development">
+      <span><svg class="i"><use href="#i-robot"/></svg><b id="c-model" style="font-weight:500">…</b></span>
+      <span class="hide-sm"><svg class="i"><use href="#i-chip"/></svg><span id="c-fw" style="padding:0;border:0;background:none">…</span></span>
+      <span><i class="dot" id="c-sd-dot"></i><span id="c-sd" style="padding:0;border:0;background:none">sec dev</span></span>
+    </div>
+    <button class="iconbtn" onclick="cycleTheme()" title="theme"><svg class="i"><use class="theme-ic" href="#i-auto"/></svg></button>
+    <button class="iconbtn" onclick="logout()" title="log out"><svg class="i"><use href="#i-out"/></svg></button>
+  </div>
+  <nav>
+    <a data-tab="status">Status</a>
+    <a data-tab="secdev">Secondary development</a>
+    <a data-tab="services">Services</a>
+    <a data-tab="backup">Backup</a>
+    <a data-tab="settings">Settings</a>
+    <a data-tab="console">Console</a>
+  </nav>
+</header>
+
+<main>
+<div id="err"></div>
+
+<!-- STATUS -->
+<section id="tab-status">
+  <div class="grid">
+    <div class="panel">
+      <div class="hd"><h3>Robot</h3></div>
+      <div class="bd"><dl class="kv" id="kv-robot"></dl></div>
+    </div>
+    <div class="panel">
+      <div class="hd"><h3>System</h3></div>
+      <div class="bd"><dl class="kv" id="kv-system"></dl></div>
+    </div>
+  </div>
+</section>
+
+<!-- SECONDARY DEVELOPMENT -->
+<section id="tab-secdev">
+  <div class="panel">
+    <div class="hd"><h3>Secondary development</h3>
+      <div class="right">
+        <button class="ghost" id="probeBtn" title="re-check, including a live rt/lowcmd sample" onclick="probe()">
+          <svg class="i"><use href="#i-refresh"/></svg></button>
+      </div>
+    </div>
+    <div class="toggle">
+      <button class="sw" id="sw" onclick="askToggle()" aria-label="secondary development"></button>
+      <div>
+        <div class="state" id="swlabel">…</div>
+        <div class="note" id="swnote"></div>
+      </div>
+    </div>
+    <div class="confirm" id="confirm">
+      <p id="confirmText"></p>
+      <div class="row">
+        <button class="primary" onclick="doToggle()">Confirm</button>
+        <button onclick="hideConfirm()">Cancel</button>
+      </div>
+    </div>
+    <div class="callout" id="reboot"><b>Power-cycle required.</b> Switch the robot off with the power button,
+      wait a few seconds, switch it on. A soft reboot does not reset the MCU and motors.</div>
+    <pre class="log" id="log"></pre>
+  </div>
+
+  <div class="panel">
+    <div class="hd"><h3>Checks</h3><span class="sub">what the robot reports</span></div>
+    <ul class="checks" id="checks"></ul>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="tab-services">
+  <div class="panel">
+    <div class="hd"><h3>Services</h3><span class="sub mono" id="svcmeta"></span>
+      <div class="right">
+        <span class="legend"><span><i class="dot ok"></i>running</span><span><i class="dot"></i>stopped</span><span><i class="dot bad"></i>error</span></span>
+        <button class="ghost" title="reload" onclick="loadServices()"><svg class="i"><use href="#i-refresh"/></svg></button>
+      </div>
+    </div>
+    <p class="svcwarn" id="svcwarn" style="display:none"></p>
+    <div class="tiles" id="svcs"><span class="note">loading…</span></div>
+    <pre class="log" id="svcout"></pre>
+  </div>
+  <p class="note">Read from <span class="mono">mscli listservice</span>. Click a service to start or stop it. Greyed names are disabled at boot.</p>
+</section>
+
+<!-- BACKUP -->
+<section id="tab-backup">
+  <div class="panel">
+    <div class="hd"><h3>Flash partitions</h3><span class="sub">read-only dump, downloaded to this browser</span></div>
+    <ul class="parts" id="parts"><li><span></span><span class="note">loading…</span></li></ul>
+    <div class="ft">
+      <button class="primary" id="zipBtn" onclick="downloadZip()">Download selected as .zip</button>
+      <span class="note" id="zipNote"></span>
+    </div>
+  </div>
+  <p class="note">The partitions are only read, never written. <span class="mono">uni</span> holds this robot's identity:
+    keep the zip somewhere safe, it is what you need to recover a board whose flash was damaged.</p>
+</section>
+
+<!-- SETTINGS -->
+<section id="tab-settings">
+  <div class="grid">
+    <div class="panel">
+      <div class="hd"><h3>Password</h3></div>
+      <div class="bd">
+        <p class="warn" id="pwnote"></p>
+        <form onsubmit="changePassword(event)">
+          <div class="row"><input type="password" id="pw-cur" placeholder="Current password" autocomplete="current-password" style="flex:1"></div>
+          <div class="row"><input type="password" id="pw-new" placeholder="New password" autocomplete="new-password" style="flex:1">
+            <input type="password" id="pw-new2" placeholder="Repeat" autocomplete="new-password" style="flex:1"></div>
+          <div class="row"><button type="submit" class="primary">Change password</button><span class="note" id="pwmsg"></span></div>
+        </form>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="hd"><h3>Session</h3></div>
+      <div class="bd">
+        <p>Expires in <span class="mono" id="sess-left">…</span></p>
+        <p class="note">Sessions last one hour. Changing the password logs out every other session.</p>
+        <div class="row" style="margin-top:12px"><button onclick="logout()">Log out</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="hd"><h3>Guardian</h3>
+      <span class="right"><button class="sw sm" id="g-sw" onclick="toggleGuardian()" aria-label="guardian"></button></span></div>
+    <div class="bd">
+      <div class="svcstate"><i class="dot" id="g-dot"></i><span id="guardian-state">…</span></div>
+      <p class="note">Keeps sshd up, keeps root login working across OTA updates, and brings WiFi back if the stack
+        fails to boot. Required before switching secondary development on for R1 and G1.</p>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="hd"><h3>Web UI service</h3>
+      <span class="right"><button class="sw sm" id="ws-sw" onclick="toggleWebservice()" aria-label="web UI service"></button></span></div>
+    <div class="bd">
+      <div class="svcstate"><i class="dot" id="ws-dot"></i><span id="ws-state">…</span></div>
+      <p class="note" id="ws-note"></p>
+    </div>
+    <pre class="log" id="setout"></pre>
+  </div>
+</section>
+
+<!-- CONSOLE -->
+<section id="tab-console">
+  <div class="panel" style="overflow:hidden">
+    <div class="hd"><h3>Console</h3><span class="sub">root shell on the robot</span>
+      <div class="right">
+        <label class="note">timeout <input type="number" id="conTmo" value="30" min="1" max="300" style="width:64px;padding:4px 6px"> s</label>
+        <button onclick="$('conOut').textContent=''">Clear</button>
+      </div>
+    </div>
+    <div class="term">
+      <pre id="conOut"></pre>
+      <div class="in"><span>#</span>
+        <input type="text" id="conIn" placeholder="command · Enter runs · ↑ ↓ history" autocomplete="off" spellcheck="false">
+        <button onclick="conRun()">Run</button>
+      </div>
+    </div>
+  </div>
+  <p class="note">Each command runs on its own with <span class="mono">bash -lc</span> from <span class="mono">/</span>; the working directory is not kept, so chain with <span class="mono">cd /x &amp;&amp; …</span>.</p>
+</section>
+</main>
+</div>
+
+<div class="modal" id="pcModal" role="dialog" aria-modal="true" aria-labelledby="pcTitle">
+  <div class="box">
+    <h3 id="pcTitle">Power-cycle the robot</h3>
+    <p id="pcText"></p>
+    <ol>
+      <li>Switch the robot off with its power button.</li>
+      <li>Wait a few seconds.</li>
+      <li>Switch it back on.</li>
+    </ol>
+    <p class="note">A soft reboot is not enough: it does not reset the MCU and the motors.</p>
+    <div class="row" style="margin-top:14px"><button class="primary" onclick="$('pcModal').classList.remove('on')">OK</button></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => (s==null||s===""?"-":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const err = m => { $("err").textContent = m ? "error: "+m : ""; };
+
+/* ---- theme: auto -> light -> dark ---- */
+function themeIcon(){
+  const t = document.documentElement.dataset.theme || "auto";
+  document.querySelectorAll(".theme-ic").forEach(u=>u.setAttribute("href", "#i-"+(t==="light"?"sun":t==="dark"?"moon":"auto")));
+  document.querySelectorAll("button[onclick='cycleTheme()']").forEach(b=>b.title = "theme: "+t);
+}
+function cycleTheme(){
+  const cur = document.documentElement.dataset.theme || "auto";
+  const next = {auto:"light", light:"dark", dark:"auto"}[cur];
+  if(next==="auto") delete document.documentElement.dataset.theme; else document.documentElement.dataset.theme = next;
+  try{ localStorage.setItem("fwtools-theme", next); }catch(e){}
+  themeIcon();
+}
+themeIcon();
+
+class AuthError extends Error {}
+async function api(path, method="GET", body=null){
+  const opt = {method, headers:{}};
+  if(body!==null){ opt.headers["Content-Type"]="application/json"; opt.body=JSON.stringify(body); }
+  const r = await fetch(path, opt);
+  const j = await r.json().catch(()=>({error:"bad response (HTTP "+r.status+")"}));
+  if(r.status===401 && path!=="/api/login"){ showLogin(); throw new AuthError("login required"); }
+  if(!r.ok) throw new Error(j.error || ("HTTP "+r.status));
+  return j;
+}
+
+/* ---- login / session ---- */
+let sessEnd = 0, sessTimer = null, statTimer = null;
+function showLogin(){
+  $("app").style.display="none"; $("login").style.display="flex"; $("pw").value=""; $("pw").focus();
+  clearInterval(sessTimer); clearInterval(svcTimer); clearInterval(statTimer); clearInterval(polling); polling = null;
+}
+async function login(e){
+  e.preventDefault(); $("loginErr").textContent="";
+  try{ await api("/api/login","POST",{password:$("pw").value}); start(); }
+  catch(x){ $("loginErr").textContent = x.message; }
+}
+async function logout(){ try{ await api("/api/logout","POST",{}); }catch(e){} showLogin(); }
+async function start(){
+  let s;
+  try{ s = await api("/api/session"); }catch(e){ return; }
+  $("login").style.display="none"; $("app").style.display="block";
+  sessEnd = Date.now() + s.expires_in*1000;
+  $("pwnote").textContent = s.default_password ? "Still the default password. Change it." : "";
+  $("pwnote").style.display = s.default_password ? "" : "none";
+  clearInterval(sessTimer);
+  const tick = ()=>{
+    const left = Math.max(0, Math.round((sessEnd-Date.now())/1000));
+    $("sess-left").textContent = Math.floor(left/60)+" min "+String(left%60).padStart(2,"0")+" s";
+    if(!left) showLogin();
+  };
+  tick(); sessTimer = setInterval(tick, 1000);
+  showTab(location.hash.slice(1) || "status");
+  refresh();
+  clearInterval(statTimer); statTimer = setInterval(()=>{ if(!busy) refresh(); }, 15000);
+}
+
+/* ---- tabs ---- */
+const TABS = ["status","secdev","services","backup","settings","console"];
+function showTab(t){
+  if(!TABS.includes(t)) t = "status";
+  TABS.forEach(x=>$("tab-"+x).classList.toggle("on", x===t));
+  document.querySelectorAll("nav a").forEach(a=>a.classList.toggle("on", a.dataset.tab===t));
+  history.replaceState(null, "", "#"+t);
+  clearInterval(svcTimer);
+  if(t==="services"){ loadServices(); svcTimer = setInterval(loadServices, 5000); }
+  if(t==="console") setTimeout(()=>$("conIn").focus(), 30);
+  if(t==="backup") loadParts();
+}
+document.querySelectorAll("nav a").forEach(a=>a.onclick=()=>showTab(a.dataset.tab));
+
+/* ---- status ---- */
+let S = null;
+function fmtBytes(n){ if(!n) return "-"; const u=["B","KB","MB","GB","TB"]; let i=0; while(n>=1024&&i<4){n/=1024;i++;} return n.toFixed(i?1:0)+" "+u[i]; }
+function fmtUptime(s){ if(s==null) return "-"; s=Math.floor(s); const d=Math.floor(s/86400), h=Math.floor(s%86400/3600), m=Math.floor(s%3600/60);
+  return (d?d+"d ":"")+h+"h "+m+"m"; }
+const kv = r => r.map(([k,v,c])=>`<dt>${k}</dt><dd class="${c||""}">${esc(v)}</dd>`).join("");
+const onOff = v => v===true ? "on" : v===false ? "off" : "unknown";
+const onCls = v => v===true ? "ok" : v===false ? "bad" : "";
+
+// judged from the loader header at sector 64: RKSS = signed loader, RKNS = plain one
+function secureBootText(sb, magic){
+  if(sb===true) return "on (signed loader, RKSS)";
+  if(sb===false) return "off (unsigned loader, RKNS)";
+  return magic ? `unknown (loader header "${magic}")` : "unknown (loader header unreadable)";
+}
+function renderStatus(s){
+  S = s;
+  $("c-model").textContent = s.platform + (s.edition && s.edition!=="?" ? " "+s.edition : "");
+  $("c-fw").textContent = s.firmware || "?";
+  $("c-fw").className = (s.secdev && s.secdev.unsupported) ? "bad" : "";
+  $("c-fw").title = (s.secdev && s.secdev.unsupported) || "";
+  const sd = s.secdev||{};
+  $("c-sd").textContent = "sec dev " + onOff(sd.on) + (sd.pending ? " · power-cycle" : "");
+  $("c-sd-dot").className = "dot " + (sd.pending ? "warn" : onCls(sd.on));
+
+  const sb = s.secure_boot;
+  $("kv-robot").innerHTML = kv([
+    ["Model", s.platform], ["Edition", s.edition], ["Serial", s.sn], ["Region", s.region],
+    ["Hardware", s.hardware?"v"+s.hardware:""], ["Bluetooth", s.bluetooth],
+    ["Firmware", s.firmware + (s.firmware_mod?" (mod "+s.firmware_mod+")":"")],
+    ["Secure boot", secureBootText(sb, s.loader_magic)],
+    ["Secondary dev", onOff(sd.on) + (sd.pending ? ", power-cycle required" : ""), sd.pending ? "warn" : onCls(sd.on)],
+    s.identity_error ? ["Identity", s.identity_error, "bad"] : ["Identity from", "/dev/uni_sec"],
+  ]);
+  const y = s.system||{};
+  $("kv-system").innerHTML = kv([
+    ["Hostname", y.hostname], ["Uptime", fmtUptime(y.uptime)], ["Load", (y.load||[]).join("  ")],
+    ["Memory", y.mem_total ? fmtBytes(y.mem_total-y.mem_avail)+" of "+fmtBytes(y.mem_total) : ""],
+    ["/unitree free", y.disk ? fmtBytes(y.disk.free)+" of "+fmtBytes(y.disk.total) : ""],
+    ["Kernel", y.kernel], ["Addresses", (y.ips||[]).join("\n")],
+  ]);
+  renderSecdev(sd);
+  renderSettings(s);
+  if(s.job && !polling) poll(s.job);
+}
+async function refresh(){
+  try{ renderStatus(await api("/api/status")); err(""); }
+  catch(e){ if(!(e instanceof AuthError)) err(e.message); }
+}
+
+/* ---- secondary development ---- */
+let SD = null, lastWire = null;             // last rt/lowcmd sample: the 15 s status refresh never probes
+const WIRE = "rt/lowcmd on the wire";
+function renderSecdev(sd, probed){
+  SD = sd;
+  const wire = (sd.checks||[]).find(c=>c.label===WIRE);
+  if(probed && wire) lastWire = {...wire, note: "sampled at "+new Date().toLocaleTimeString()};
+  else if(!probed && wire && lastWire) Object.assign(wire, lastWire);
+  const sw = $("sw");
+  sw.classList.toggle("on", !!sd.on);
+  sw.classList.toggle("pending", !!sd.pending);
+  $("reboot").style.display = sd.pending ? "block" : "none";
+  sw.disabled = !!sd.native || busy || (!sd.on && !sd.package);
+  const cls = sd.pending ? "warn" : sd.on ? "ok" : "bad";
+  if(!busy) $("swlabel").innerHTML = sd.on==null ? "State unknown"
+    : `Secondary development is <b class="${cls}">${sd.on?"on":"off"}</b>` + (sd.pending ? ` <b class="warn">· power-cycle required</b>` : "");
+  let note;
+  if(sd.native) note = "EDU robots have it built in, so there is nothing to switch.";
+  else if(sd.on) note = "Switching off restores " + (sd.backup ? "backup "+sd.backup+", the files saved before patching." : "the stock files from the package (downloaded).");
+  else note = sd.package ? "Switching on installs the "+S.platform+" "+sd.package.version+" package and keeps a backup of the originals."
+                         : (sd.unsupported || "No package matches this firmware.") + " It can't be switched on.";
+  $("swnote").textContent = note;
+  $("checks").innerHTML = (sd.checks||[]).map(c=>
+    `<li><i class="dot ${c.state==="dim"?"":c.state}"></i><span class="lb">${esc(c.label)}</span>`+
+    `<span class="val ${c.state}">${esc(c.value)}</span>${c.note?`<span class="nt">${esc(c.note)}</span>`:""}</li>`).join("");
+}
+async function probe(){
+  const b = $("probeBtn"); b.classList.add("spin"); b.disabled = true;
+  try{ renderSecdev(await api("/api/secdev?probe=1"), true); err(""); }
+  catch(e){ if(!(e instanceof AuthError)) err(e.message); }
+  b.classList.remove("spin"); b.disabled = false;
+}
+let pending = null;
+function askToggle(){
+  if(!SD || SD.native || busy) return;
+  pending = SD.on ? "off" : "on";
+  let t;
+  if(pending==="on"){
+    t = "Switch secondary development on? The robot's services stop while files are replaced.";
+    if(SD.humanoid) t += " A standing humanoid will fall: put it on the hoist or lay it down first.";
+  } else {
+    t = "Switch secondary development off? " + (SD.backup ? "Backup "+SD.backup+" is restored." : "The stock files are restored from the package.")
+      + " The robot's services stop while files are replaced.";
+    if(SD.humanoid) t += " Put the robot on the hoist or lay it down first.";
+  }
+  $("confirmText").textContent = t;
+  $("confirm").style.display = "block";
+}
+function hideConfirm(){ $("confirm").style.display="none"; pending=null; }
+async function doToggle(){
+  const action = pending; hideConfirm();
+  if(!action) return;
+  $("log").textContent=""; $("reboot").style.display="none";
+  setBusy(true);
+  try{ const {job} = await api("/api/secdev","POST",{action, confirm:true}); poll(job); }
+  catch(e){ $("log").style.display="block"; $("log").textContent = "error: "+e.message; setBusy(false); }
+}
+function showPowerCycle(what){
+  const on = /^Turn on/.test(what);
+  $("pcText").textContent = `Secondary development was switched ${on?"on":"off"}. The new files load at the next power-on, `+
+    `so until then the robot still runs as before.`;
+  $("pcModal").classList.add("on");
+  $("pcModal").querySelector("button").focus();
+}
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") $("pcModal").classList.remove("on"); });
+let polling = null, busy = false;
+function setBusy(on){
+  busy = on; $("sw").disabled = on || !!(SD&&SD.native);
+  if(on) $("swlabel").textContent = "Working…";
+}
+function poll(id){
+  clearInterval(polling); setBusy(true); $("log").style.display="block";
+  polling = setInterval(async ()=>{
+    try{
+      const j = await api("/api/job/"+id);
+      $("log").textContent = j.name+"\n\n"+j.lines.join("\n") + (j.done ? "" : "\n…");
+      $("log").scrollTop = $("log").scrollHeight;
+      if(j.done){
+        clearInterval(polling); polling = null; setBusy(false);
+        $("log").textContent += "\n" + (j.ok ? "[done]" : "[failed]");
+        if(j.reboot) showPowerCycle(j.name);
+        refresh();
+      }
+    }catch(e){ clearInterval(polling); polling = null; setBusy(false); }
+  }, 700);
+}
+
+/* ---- services ---- */
+let svcTimer = null;
+async function loadServices(){
+  let d;
+  try{ d = await api("/api/services"); }catch(e){ if(!(e instanceof AuthError)) $("svcs").innerHTML = `<span class="bad">${esc(e.message)}</span>`; return; }
+  const list = d.services||[];
+  const run = list.filter(s=>s.state==="running").length;
+  $("svcmeta").textContent = `${run} of ${list.length} running`;
+  $("svcwarn").style.display = d.fresh ? "none" : "block";
+  $("svcwarn").textContent = d.error || "";
+  $("svcs").innerHTML = list.map(s=>{
+    const dot = s.state==="running"?"ok":s.state==="error"?"bad":"";
+    return `<div class="tile${s.enabled?"":" off"}" data-name="${esc(s.name)}" data-state="${s.state}" title="${esc(s.state)}${s.enabled?"":", disabled at boot"}: click to ${s.state==="running"?"stop":"start"}">`+
+      `<i class="dot ${dot}"></i><span class="nm">${esc(s.name)}</span>${s.version?`<span class="v">${esc(s.version)}</span>`:""}</div>`;
+  }).join("") || '<span class="note">No services. Is master_service up?</span>';
+  document.querySelectorAll(".tile").forEach(el=>el.onclick=()=>svcToggle(el.dataset.name, el.dataset.state));
+}
+async function svcToggle(name, state){
+  const action = state==="running" ? "stop" : "start";
+  if(!confirm(`${action[0].toUpperCase()+action.slice(1)} ${name}?`)) return;
+  const out = $("svcout"); out.style.display="block"; out.textContent = `mscli ${action}service ${name} …`;
+  try{ const r = await api("/api/services","POST",{name, action}); out.textContent = (r.ok?"ok":"did not reach the expected state")+"\n"+(r.out||""); }
+  catch(e){ out.textContent = "error: "+e.message; }
+  setTimeout(loadServices, 800);
+}
+
+/* ---- backup ---- */
+async function loadParts(){
+  let d;
+  try{ d = await api("/api/backup"); }catch(e){ if(!(e instanceof AuthError)) $("parts").innerHTML = `<li><span></span><span class="bad">${esc(e.message)}</span></li>`; return; }
+  $("parts").innerHTML = d.areas.map(a => a.found
+    ? `<li><input type="checkbox" class="pchk" value="${esc(a.name)}" checked onchange="zipState()"><span class="nm">${esc(a.name)}</span>`+
+      `<span class="ds">${esc(a.desc)}</span><span class="dv">${esc(a.dev)} · ${fmtBytes(a.size)}</span>`+
+      `<a href="/api/backup/img/${encodeURIComponent(a.name)}" download>.img</a></li>`
+    : `<li class="off"><input type="checkbox" disabled><span class="nm">${esc(a.name)}</span>`+
+      `<span class="miss">${esc(a.error)}</span><span></span><span></span></li>`).join("");
+  zipState();
+}
+function zipState(){
+  const sel = [...document.querySelectorAll(".pchk:checked")];
+  $("zipBtn").disabled = !sel.length;
+  $("zipNote").textContent = sel.length ? sel.map(el=>el.value).join(", ") : "nothing selected";
+}
+function downloadZip(){
+  const names = [...document.querySelectorAll(".pchk:checked")].map(el=>el.value);
+  if(!names.length) return;
+  const a = document.createElement("a");
+  a.href = "/api/backup/zip?parts=" + encodeURIComponent(names.join(","));
+  a.download = ""; document.body.appendChild(a); a.click(); a.remove();
+  $("zipNote").textContent = "Reading the partitions… the download starts in your browser.";
+}
+
+/* ---- settings ---- */
+function stateText(txt, dot, st){
+  $(txt).textContent = st.installed ? (st.active?"running":"installed, not running") : "off";
+  $(dot).className = "dot " + (st.installed ? (st.active?"ok":"warn") : "");
+}
+let settingsBusy = false;
+function renderSettings(s){
+  const g = s.guardian||{}, w = s.webservice||{};
+  stateText("guardian-state", "g-dot", g);
+  stateText("ws-state", "ws-dot", w);
+  if(w.installed) $("ws-state").textContent += w.enabled ? ", starts at boot" : ", not started at boot";
+  $("g-sw").classList.toggle("on", !!g.installed);
+  $("ws-sw").classList.toggle("on", !!(w.installed && w.enabled));
+  $("g-sw").disabled = $("ws-sw").disabled = settingsBusy;
+  $("ws-note").textContent = w.installed
+    ? `Runs this page as a systemd service on port ${w.port||"?"}, started at every boot.`
+    : `Runs this page as a systemd service, started at every boot. Right now it was started by hand on port ${s.port}.`;
+}
+async function changePassword(e){
+  e.preventDefault(); const m = $("pwmsg"); m.className="note";
+  if($("pw-new").value !== $("pw-new2").value){ m.textContent="The new passwords differ."; m.className="bad"; return; }
+  try{
+    await api("/api/password","POST",{current:$("pw-cur").value, new:$("pw-new").value});
+    m.textContent = "Changed. Other sessions were logged out."; m.className = "ok";
+    ["pw-cur","pw-new","pw-new2"].forEach(i=>$(i).value=""); $("pwnote").style.display="none";
+  }catch(x){ m.textContent = x.message; m.className="bad"; }
+}
+async function setSwitch(path, on){
+  settingsBusy = true; $("g-sw").disabled = $("ws-sw").disabled = true;
+  const out = $("setout"); out.style.display="block"; out.textContent="…";
+  let ok = true;
+  try{ const r = await api(path,"POST",{on}); out.textContent = (r.lines||[]).join("\n"); }
+  catch(e){ out.textContent = "error: "+e.message; ok = false; }
+  settingsBusy = false;
+  if(ok && path==="/api/webservice") reconnect(); else refresh();
+}
+function reconnect(){
+  // the service may be taking over this port: wait for it, then carry on
+  let n = 0;
+  const t = setInterval(async ()=>{
+    n++;
+    try{ const r = await fetch("/api/session"); if(r.status===200){ clearInterval(t); refresh(); } else if(r.status===401){ clearInterval(t); showLogin(); } }
+    catch(e){ if(n>30) clearInterval(t); }
+  }, 1500);
+}
+function toggleGuardian(){
+  const on = !$("g-sw").classList.contains("on");
+  if(!on && !confirm("Switch the guardian off? Without it an OTA update can lock you out (root password and SSH reset).")) return;
+  setSwitch("/api/guardian", on);
+}
+function toggleWebservice(){
+  const on = !$("ws-sw").classList.contains("on");
+  if(!on && !confirm("Switch the web UI service off? If this page is served by it, the page goes offline until you run ./start.sh on the robot.")) return;
+  setSwitch("/api/webservice", on);
+}
+
+/* ---- console ---- */
+let HIST = [], HI = -1;
+function conAppend(text, cls){
+  const el = document.createElement("span");
+  if(cls) el.className = cls;
+  el.textContent = text;
+  $("conOut").appendChild(el);
+}
+async function conRun(){
+  const inp = $("conIn"), out = $("conOut"), cmd = inp.value;
+  if(!cmd.trim()) return;
+  HIST.push(cmd); HI = HIST.length;
+  const host = (S && S.system && S.system.hostname) || "robot";
+  conAppend(`root@${host}:/# `, "p"); conAppend(cmd+"\n", "c");
+  inp.value=""; inp.disabled=true; out.scrollTop = out.scrollHeight;
+  try{
+    const r = await api("/api/console","POST",{cmd, timeout: parseInt($("conTmo").value)||30});
+    const text = (r.out||"").replace(/\n+$/, "");
+    if(text) conAppend(text+"\n");
+    if(r.rc!==0) conAppend(`[exit ${r.rc}]\n`, "e");
+  }catch(e){ conAppend("error: "+e.message+"\n", "e"); }
+  out.scrollTop = out.scrollHeight;
+  inp.disabled=false; inp.focus();
+}
+$("conIn").addEventListener("keydown", e=>{
+  const inp = $("conIn");
+  if(e.key==="Enter"){ e.preventDefault(); conRun(); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); if(HI>0){ HI--; inp.value = HIST[HI]||""; } }
+  else if(e.key==="ArrowDown"){ e.preventDefault(); if(HI<HIST.length-1){ HI++; inp.value = HIST[HI]||""; } else { HI = HIST.length; inp.value=""; } }
+});
+
+(async ()=>{
+  const r = await fetch("/api/session").catch(()=>null);
+  if(r && r.status===200) start(); else showLogin();
+})();
+</script>
+</body>
+</html>

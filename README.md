@@ -1,112 +1,54 @@
 # Unitree Firmware Tools
 
-Unitree's **AIR** and **PRO** robots ship with **secondary development locked** — you can't
-freely send low-level commands or drive the robot from the SDK. That's a shame. **This is the
-repo that fixes it:** it safely **re-enables secondary development**, so you can use your robot
-with any SDK — official or unofficial.
+Unitree's **AIR** and **PRO** robots ship with **secondary development locked**: you can't send
+low-level commands or drive the robot from the SDK. **This tool unlocks it.** It runs on the robot,
+flips secondary development on with one switch, keeps backups so you can always go back, and
+installs a **guardian** failsafe so you never get locked out.
 
-Run it on the robot (or deploy from a host). It reads the robot's real model/edition, applies an
-md5-verified patch package (with timestamped backups so you can always roll back), and installs a
-**guardian** failsafe that keeps you from being locked out.
+![Unitree Firmware Tools — secondary development on](docs/img/hero.png)
 
 > ⚠️ **Root access is required first.** This tool configures a robot that is **already
-> jailbroken (root)** — it does *not* jailbreak the robot for you. Do the jailbreak first;
-> see the **RoboLegion Discord** for the guide → [robolegion.com](https://robolegion.com).
+> jailbroken (root)**; it does *not* jailbreak the robot for you. For the jailbreak guide, see the
+> **RoboLegion Discord** → [robolegion.com](https://robolegion.com).
 
 ## ⚠️ Disclaimer
 
-Modifying robot firmware carries risk. **Use this only on a robot you personally own.** You do so
-**entirely at your own risk** — the author accepts **no responsibility for any damage, injury, or
-loss** resulting from its use.
+Modifying robot firmware carries risk. **Use this only on a robot you personally own**, entirely
+**at your own risk**. The author accepts **no responsibility for any damage, injury, or loss**
+resulting from its use.
 
-## Supported
+## Supported robots
 
-| Robot | Status | Firmware versions |
-|---|---|---|
-| **R1** | ✅ supported | **1.4.2** |
-| **G1** | ✅ supported | **1.4.0**, **1.4.5**, **1.5.3**, **1.5.4** |
-| **Go2** | ✅ supported | **1.1.2**, **1.1.3**, **1.1.4**, **1.1.6**, **1.1.7**, **1.1.11**, **1.1.14**, **1.1.15** |
+| Robot | Firmware versions |
+|---|---|
+| **R1** | 1.4.2 |
+| **G1** | 1.4.0, 1.4.5, 1.5.3, 1.5.4 |
+| **Go2** | 1.1.2, 1.1.3, 1.1.4, 1.1.6, 1.1.7, 1.1.11, 1.1.14, 1.1.15 |
 
-Each firmware has its own md5-verified package (patched + factory originals + `manifest.json`),
-uploaded to a per-model Yandex Disk folder (`config.MODEL_FOLDERS`). Many patched binaries are
-shared across versions (e.g. `master_service` is byte-identical across all three robots, and
-`net-init` / `basic_service_check` are shared within a robot family), but every package is fully
-self-contained so it can be installed offline (`--package <dir|zip>`).
+AIR and PRO editions. EDU robots already have secondary development, so the tool shows it as on
+and leaves them alone. A firmware that isn't listed is often still supported: the tool fingerprints
+the robot's service binaries and picks the matching package when Unitree re-shipped the same files.
+If nothing matches, it refuses rather than guesses.
 
-**How the right package is chosen.** Each model ships a *general manifest*,
-`assets/manifests/<Robot>.index.json`, listing every packaged version with, per target file, its
-vanilla and patched md5. The tool selects a package:
-1. **by firmware version** — the fast path (`version.json` matches a package); else
-2. **by md5 fingerprint** — it reads the 4 target files on the robot and finds the version whose
-   *vanilla* md5 set matches (secondary-dev not yet enabled) or whose *patched* set matches
-   (already enabled). So a robot on a firmware we don't explicitly package still gets the correct
-   package whenever its service binaries are byte-for-byte one we do — which, given how often
-   Unitree re-ships identical binaries, covers most in-between releases. The chosen package is then
-   md5-gated at install as usual, so a wrong guess simply refuses rather than mispatches.
+## Features
 
-> **Editions:** these are the **EDU / Pro** secondary-dev packages. The tool reads the robot's
-> edition from its identity (`sn[4]`) and refuses to touch a file whose md5 isn't the known
-> vanilla one for that firmware, so an unexpected edition/version simply won't install.
+- **Secondary development on/off** with one switch. The tool reads the robot's real model, edition
+  and firmware, downloads the matching md5-verified package, stops the stack the same way an OTA
+  does, backs up every original, installs and re-verifies. Off restores the backup (or the factory
+  files). A power-cycle finishes either change.
+- **Live checks**: DDS security, the edition the firmware believes it is, whether low-level commands
+  must be encrypted, and a live sample of `rt/lowcmd` on the wire.
+- **Guardian failsafe**: keeps SSH alive, keeps root login working across OTA updates, and brings
+  WiFi back if the Unitree stack fails to boot. Installed on first run, switchable in Settings.
+- **Services**: start and stop any Unitree service.
+- **Backup**: download the boot-critical flash areas (loader, u-boot, boot, identity) as a zip.
+- **Console**: a root shell in the browser.
+- **Offline install** from a local package: `./start.sh --cli --package <dir|zip>`.
 
 ## Run
 
-On the robot (you're already root after the jailbreak), just:
+Install on the robot (you're root after the jailbreak):
 
-```bash
-./start.sh                          # auto-detects the robot, shows the info card + menu
-```
-
-`start.sh` passes options through to `app.py`, so for advanced use:
-
-```bash
-./start.sh --platform R1
-./start.sh --package /path/to/secondary_dev_r1_1.4.2.zip    # install offline
-```
-
-**Menu**
-- **Robot info** — model/edition, serial, region, hardware, firmware, secondary-dev + guardian status.
-- **Secondary development** — Status / Enable / Restore backup / Restore factory.
-  - *Enable* requires the guardian (auto-offered), downloads + verifies the package against its `manifest.json`, refuses to touch any file whose md5 isn't the known-vanilla one, **stops the running stack the OTA way** (`mscli stopservice …` + `master_service`, behind a motion-safety confirm on R1/G1), backs up each original to `/unitree/.fwtools_backup/<timestamp>/`, installs + re-verifies, then reboots.
-  - *Restore backup* — reinstalls the exact originals saved before patching (pick a timestamp if several exist). Fully offline.
-  - *Restore factory* — reinstalls the vanilla files from the package's `factory/` tree, ignoring backups (needs the package: download or `--package`).
-- **Guardian failsafe** — install/remove the `unitree-guardian` systemd service (see below).
-
-## Guardian failsafe (`unitree-guardian`)
-
-An independent systemd service (never depends on the stack it guards). Every few seconds it:
-1. keeps `sshd` alive despite `net-init`'s `systemctl disable ssh`;
-2. **keeps root loginable across OTA updates** — re-applies the root password (default `robolegion`) and re-enables root SSH login whenever an update resets them;
-3. snapshots the last-known-good WiFi while the stack is healthy;
-4. if `master_service` fails to boot (or WiFi drops), restores that WiFi + `sshd` — with a `/unitree`-independent fallback (`wpa_supplicant@wlan0` / `hostapd`) for when the whole stack is broken.
-
-Tunables via env (`GUARDIAN_ROOT_PW`, `GUARDIAN_KEEP_ROOT_PW`, `GUARDIAN_KEEP_ROOT_SSH`, `GUARDIAN_BOOT_GRACE`, `GUARDIAN_POLL`).
-
-## Updating the official firmware (OTA)
-
-**Restore before you update.** If you plan to run an official OTA update, first put the robot
-back to stock — **Secondary development → Restore backup** (or **Restore factory**). Patched
-binaries can make the OTA **fail**, so always restore first, update, then re-enable afterwards.
-
-The **guardian** is also your safety net *across* an OTA. An OTA typically **changes the root
-password and disables SSH**, which would lock you out — the guardian re-applies your password and
-keeps SSH enabled. And if the Unitree stack fails to boot after an update, the guardian brings up
-**WiFi** so you can still get in.
-
-## R1: wired connection required
-
-On the **R1** the SDK/DDS traffic only works over **Ethernet**, and the robot has no spare
-Ethernet jack — so you add one with a small **JST → RJ45 adapter** on the empty Lidar port. See
-**[docs/R1_ETHERNET.md](docs/R1_ETHERNET.md)** for the adapter pinout. The robot is then reachable
-at **192.168.123.161** from any secondary-development PC (laptop, SBC, …).
-
-## Deploy from a host
-
-```bash
-ROBOT=root@192.168.123.161 ./deploy.sh        # rsync to /unitree/dev/unitree_firmware_tools
-./deploy.sh --run                              # deploy then launch over ssh
-```
-
-Or install on the robot directly:
 ```bash
 mkdir -p /unitree/dev && cd /unitree/dev
 git clone https://github.com/legion1581/unitree_firmware_tools.git
@@ -114,14 +56,35 @@ cd unitree_firmware_tools && pip install -r requirements.txt
 ./start.sh
 ```
 
-## Layout
-`core/` (yandex download, md5-gated install/backup engine, OTA-style `service_control`),
-`platforms/` (R1/G1/Go2 identity + paths), `features/` (info, secondary_dev, supervisor),
-`assets/` (guardian service + per-platform `service_stop/` OTA order + per-version manifests +
-per-model `*.index.json` general manifests). The patch packages themselves (patched + factory
-binaries, `manifest.json`, zip) are built on the emulation bench and staged under
-`orange_pi_workbench/packages/<robot>/<ver>/`; each zip is uploaded to its model's Yandex Disk
-folder (`config.MODEL_FOLDERS`) and listed in that model's `assets/manifests/<Robot>.index.json`.
+Or push it from your PC with `ROBOT=root@192.168.123.161 ./deploy.sh --run`.
+
+`./start.sh` auto-detects the robot, installs the web UI as a service that starts at boot, and
+prints its address:
+
+```
+    http://192.168.123.161:8080/        # open this on any device on the same network
+```
+
+Log in with the password **`robolegion`** and change it under **Settings**. Forgot it?
+`./start.sh --reset-password` on the robot. Other options:
+
+```bash
+./start.sh --port 8080              # pick the port
+./start.sh --platform G1            # force the platform instead of auto-detect
+./start.sh --cli                    # terminal menu instead of the web UI
+```
+
+## Before an official firmware update
+
+**Restore first.** Switch secondary development **off** before running an OTA update: patched
+binaries can make the update fail. Update, then switch it back on. The guardian keeps your root
+password and SSH working across the update, and brings WiFi up if the stack doesn't come back.
+
+## G1 / R1: wired connection required
+
+On the **G1** and **R1** the SDK/DDS traffic only works over **Ethernet**, not WiFi. The robot is
+reachable at **192.168.123.161** from the wired PC. The R1 has no spare jack: add one with a small
+**JST → RJ45 adapter** on the empty Lidar port, see **[docs/R1_ETHERNET.md](docs/R1_ETHERNET.md)**.
 
 ### Thanks
 To the RoboLegion community! Visit [robolegion.com](https://robolegion.com) for info and support.

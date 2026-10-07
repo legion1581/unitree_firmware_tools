@@ -238,6 +238,83 @@ def restore_factory(robot, local=None, assume_yes=False, confirm=input, log=prin
             import shutil; shutil.rmtree(cleanup, ignore_errors=True)
 
 
+def disable(robot, local=None, log=print):
+    """Turn secondary development off: restore the newest backup that holds THIS
+    firmware's originals (a backup taken before an OTA holds older files), else
+    the package's factory files. Returns reboot-warranted."""
+    m = local_manifest(robot)
+    if m:
+        _, report = installer.Installer(root=robot.root).status(m)
+        if report and all(r["verdict"] == installer.VANILLA for r in report):
+            log("Already stock: every target file has its original md5. Nothing to do.")
+            return False
+    backup = usable_backup(robot, manifest=m)
+    if backup:
+        return restore_backup(robot, backup=backup, assume_yes=True, log=log)
+    log("No backup of this firmware's originals, restoring the factory files from the package.")
+    return restore_factory(robot, local=local, assume_yes=True, log=log)
+
+
+def usable_backup(robot, manifest=None):
+    """Newest backup whose files are this firmware's originals, or None."""
+    m = manifest or local_manifest(robot)
+    originals = {e["name"]: e.get("original_md5") for e in (m or {}).get("files", [])}
+    for b in list_backups(robot):
+        files = b["manifest"].get("files", [])
+        if files and (not originals or all(originals.get(f["name"]) == f["md5"] for f in files)):
+            return b
+    return None
+
+
 # NOTE: no software reboot. On Unitree robots a soft `reboot` only cycles the
 # Linux SoC (not the MCU/motors/power rail), so the stack comes back wrong — the
 # user must power-cycle (physical off/on). app._power_cycle_notice() says so.
+
+
+# ---- power-cycle pending --------------------------------------------------------
+# After a switch the new files only load at the next power-on. The marker lives in
+# /run (tmpfs, wiped at boot) and is also dropped once master_service is running
+# again with a start time after the switch, i.e. the new binaries are loaded.
+PENDING_FILE = "/run/unitree-fwtools/power-cycle.json"
+
+
+def mark_power_cycle(action):
+    import json, time
+    os.makedirs(os.path.dirname(PENDING_FILE), exist_ok=True)
+    with open(PENDING_FILE, "w") as f:
+        json.dump({"action": action, "time": time.time()}, f)
+
+
+def _master_started():
+    """Epoch start time of the oldest running master_service, or None."""
+    import subprocess
+    r = subprocess.run(["pgrep", "-o", "-x", "master_service"], capture_output=True, text=True)
+    pid = r.stdout.strip()
+    if not pid:
+        return None
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            ticks = int(f.read().rsplit(")", 1)[1].split()[19])    # field 22: starttime
+        with open("/proc/stat") as f:
+            btime = next(int(l.split()[1]) for l in f if l.startswith("btime"))
+        return btime + ticks / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError, StopIteration):
+        return None
+
+
+def power_cycle_pending():
+    """{action: "on"|"off", time} while the robot still has to be power-cycled, else None."""
+    import json
+    try:
+        with open(PENDING_FILE) as f:
+            p = json.load(f)
+    except (OSError, ValueError):
+        return None
+    started = _master_started()
+    if started is not None and started > p.get("time", 0):
+        try:
+            os.remove(PENDING_FILE)
+        except OSError:
+            pass
+        return None
+    return p

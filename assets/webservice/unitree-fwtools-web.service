@@ -1,0 +1,20 @@
+[Unit]
+Description=Unitree Firmware Tools web UI
+Documentation=https://github.com/legion1581/unitree_firmware_tools
+After=network-online.target
+Wants=network-online.target
+# give up if it keeps failing (e.g. the tool's folder was removed)
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=simple
+# FWTOOLS_PORT (written by the tool at install time).
+EnvironmentFile=-/etc/unitree-fwtools/web.env
+# __REPO__ is replaced with the tool's install path when the unit is installed.
+ExecStart=/usr/bin/python3 __REPO__/webapp.py --service
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

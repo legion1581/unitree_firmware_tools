@@ -43,6 +43,12 @@ def load_index(platform):
     return idx
 
 
+def supported_versions(platform, index=None):
+    """Firmware versions that have a package, oldest first."""
+    idx = index or load_index(platform) or {}
+    return sorted((v["firmware"] for v in idx.get("versions", [])), key=_verkey)
+
+
 def device_fingerprint(robot, index):
     """{target_name: current_md5_or_None} for the index's target files."""
     root = robot.root

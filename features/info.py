@@ -25,7 +25,8 @@ def render(info, sec_dev_status=None, guardian=None):
     fw = info.firmware + (f"  (mod {info.firmware_mod})" if info.firmware_mod else "")
     row("Firmware", fw)
     sb = info.secure_boot
-    row("Secure boot", "unknown" if sb is None else ("enabled" if sb else "disabled"),
+    row("Secure boot", "unknown" if sb is None else
+        ("enabled (signed loader, RKSS)" if sb else "disabled (unsigned loader, RKNS)"),
         "y" if sb else ("dim" if sb is None else "g"))
 
     if sec_dev_status is not None:

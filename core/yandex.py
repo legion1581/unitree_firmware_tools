@@ -9,9 +9,9 @@ import hashlib
 import json
 import os
 import urllib.parse
+import urllib.error
+import urllib.request
 import zipfile
-
-import requests
 
 try:
     from tqdm import tqdm
@@ -21,22 +21,28 @@ except Exception:  # tqdm is optional; degrade to no progress bar
 API = "https://cloud-api.yandex.net/v1/disk/public/resources/download"
 
 
+# stdlib only (urllib): stock robot images have no `requests` and may be offline.
+def _get(url, timeout):
+    req = urllib.request.Request(url, headers={"User-Agent": "unitree_firmware_tools"})
+    return urllib.request.urlopen(req, timeout=timeout)
+
+
 def _direct_url(public_link, path=None):
     params = {"public_key": public_link}
     if path:
         params["path"] = path
-    r = requests.get(API, params=params, timeout=30)
-    if r.status_code != 200:
-        raise RuntimeError(f"Yandex API error {r.status_code}: {r.text[:200]}")
-    return r.json()["href"]
+    try:
+        with _get(API + "?" + urllib.parse.urlencode(params), 30) as r:
+            return json.loads(r.read())["href"]
+    except urllib.error.HTTPError as e:
+        raise RuntimeError(f"Yandex API error {e.code}: {e.read()[:200]!r}")
 
 
 def fetch_json(public_link, path=None):
     """Download a small JSON resource (e.g. manifest.json) into a dict."""
     url = _direct_url(public_link, path)
-    r = requests.get(url, timeout=60)
-    r.raise_for_status()
-    return json.loads(r.content)
+    with _get(url, 60) as r:
+        return json.loads(r.read())
 
 
 def _md5(path, _b=1 << 16):
@@ -65,17 +71,14 @@ def download(public_link, dest_dir, path=None, expect_md5=None, filename=None):
         print(f"Using cached {filename} (md5 ok).")
         return save_path
 
-    resp = requests.get(url, stream=True, timeout=60)
-    resp.raise_for_status()
-    total = int(resp.headers.get("content-length", 0))
-    bar = tqdm(desc="Downloading", total=total, unit="B", unit_scale=True,
-               unit_divisor=1024, dynamic_ncols=True) if tqdm else None
-    with open(save_path, "wb") as f:
-        for chunk in resp.iter_content(chunk_size=1 << 16):
-            if chunk:
-                f.write(chunk)
-                if bar:
-                    bar.update(len(chunk))
+    with _get(url, 60) as resp, open(save_path, "wb") as f:
+        total = int(resp.headers.get("content-length") or 0)
+        bar = tqdm(desc="Downloading", total=total, unit="B", unit_scale=True,
+                   unit_divisor=1024, dynamic_ncols=True) if tqdm else None
+        for chunk in iter(lambda: resp.read(1 << 16), b""):
+            f.write(chunk)
+            if bar:
+                bar.update(len(chunk))
     if bar:
         bar.close()
 
