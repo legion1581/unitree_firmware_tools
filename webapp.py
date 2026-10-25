@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 import platforms
-from features import auth, partitions, prefs, secondary_dev, services, supervisor, webservice
+from features import air_modules, auth, partitions, prefs, secondary_dev, services, supervisor, webservice
 
 REPO = os.path.dirname(os.path.abspath(__file__))
 PAGE = os.path.join(REPO, "assets", "web", "index.html")
@@ -211,6 +211,23 @@ def secdev_summary(robot, probe=False):
     except Exception:
         pass
     pending = secondary_dev.power_cycle_pending()
+    air = None
+    if air_modules.is_air(robot):
+        cat = air_modules.catalog() or {}
+        try:
+            st = air_modules.status(robot)
+            installed = sum(1 for r in st if r["present"])
+        except Exception:
+            installed = None
+        air = {
+            "is_air": True,
+            "installed": installed,
+            "count": len(cat.get("modules", [])),
+            "modules": [{"name": m["name"], "version": m["version"], "bytes": m["bytes"]}
+                        for m in cat.get("modules", [])],
+            "zip_bytes": cat.get("zip_bytes"),
+            "total_bytes": cat.get("total_bytes"),
+        }
     return {
         # until the power-cycle, show what was switched to (DDS/ver still show the old state)
         "on": (pending["action"] == "on") if pending else (bool(verdict["enabled"]) or patched),
@@ -223,6 +240,7 @@ def secdev_summary(robot, probe=False):
         "package": pkg,
         "unsupported": unsupported,
         "backup": backup,
+        "air": air,
     }
 
 
@@ -363,6 +381,7 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": "login required"}, 401)
         try:
             route = {"/api/secdev": self._secdev_toggle,
+                     "/api/air_modules": self._air_modules_install,
                      "/api/services": self._service_action,
                      "/api/console": lambda b: self._json(console_exec(b.get("cmd", ""), b.get("timeout"))),
                      "/api/guardian": self._guardian,
@@ -485,7 +504,10 @@ class Handler(BaseHTTPRequestHandler):
             if not body.get("confirm"):
                 return self._json({"error": "confirmation required"}, 400)
             name = "Turn on secondary development"
-            fn = lambda job: _then_mark("on", secondary_dev.enable(robot, assume_yes=True, log=job.log))
+            # offer_air=False: the Air modules are a separate, explicit web action
+            # so a one-click enable never silently pulls ~70 MB.
+            fn = lambda job: _then_mark("on", secondary_dev.enable(
+                robot, assume_yes=True, log=job.log, offer_air=False))
         elif body.get("action") == "off":
             if not body.get("confirm"):
                 return self._json({"error": "confirmation required"}, 400)
@@ -494,6 +516,19 @@ class Handler(BaseHTTPRequestHandler):
         else:
             return self._json({"error": "bad action"}, 400)
         job = start_job(name, fn)
+        if not job:
+            return self._json({"error": "another operation is already running"}, 409)
+        return self._json({"job": job.id})
+
+    def _air_modules_install(self, body):
+        """Install the Pro-only modules onto a Go2 Air (background job)."""
+        if not body.get("confirm"):
+            return self._json({"error": "confirmation required"}, 400)
+        if not air_modules.is_air(self.robot):
+            return self._json({"error": "not a Go2 Air"}, 400)
+        robot = self.robot
+        fn = lambda job: _then_mark("on", air_modules.install(robot, assume_yes=True, log=job.log))
+        job = start_job("Install Pro modules (Air)", fn)
         if not job:
             return self._json({"error": "another operation is already running"}, 409)
         return self._json({"job": job.id})

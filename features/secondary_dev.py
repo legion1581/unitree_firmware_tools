@@ -17,7 +17,7 @@ import tempfile
 
 import config
 from core import installer, secdev, selector, service_control, yandex
-from . import supervisor
+from . import air_modules, supervisor
 
 
 def stop_stack_guarded(robot, assume_yes=False, confirm=input, log=print):
@@ -149,8 +149,16 @@ def resolve_package(robot, local=None, log=print):
     return pkg_dir, manifest, cleanup
 
 
-def enable(robot, local=None, assume_yes=False, confirm=input, log=print):
-    """Enable secondary development. Returns True if a reboot is warranted."""
+def enable(robot, local=None, assume_yes=False, confirm=input, log=print,
+           air_local=None, offer_air=True):
+    """Enable secondary development. Returns True if a reboot is warranted.
+
+    On a Go2 **Air**, once the patch is in, offers to add the Pro-only modules the
+    Air lacks (ai_sport/advanced_sport/unitree_lidar_slam/chat_go/utrack/4gcm) —
+    see features.air_modules. `air_local` is an optional local dir/zip for that
+    payload (else it is pulled from Yandex). `offer_air=False` suppresses the
+    offer entirely (the web UI drives the Air modules as a separate, explicit
+    action so a one-click enable never silently pulls ~70 MB)."""
     # 1) guardian gate (hard prerequisite on humanoids)
     if robot.platform in ("R1", "G1"):
         st = supervisor.status()
@@ -185,10 +193,36 @@ def enable(robot, local=None, assume_yes=False, confirm=input, log=print):
         if backup_dir:
             log(f"\nOriginals backed up to: {backup_dir}")
         log("Secondary development installed. Power-cycle the robot (turn OFF, then ON) to activate.")
+        # Go2 Air: offer to add the Pro-only modules it ships without.
+        if offer_air:
+            _offer_air_modules(robot, local=air_local, assume_yes=assume_yes,
+                               confirm=confirm, log=log)
         return True
     finally:
         if cleanup:
             import shutil; shutil.rmtree(cleanup, ignore_errors=True)
+
+
+def _offer_air_modules(robot, local=None, assume_yes=False, confirm=input, log=print):
+    """On a Go2 Air, offer the Pro-only module add-on as a follow-up step."""
+    if not air_modules.is_air(robot):
+        return
+    cat = air_modules.catalog()
+    log("\nThis is a Go2 AIR. It can also receive the Pro-only modules it ships without:")
+    if cat:
+        names = ", ".join(f"{m['name']} v{m['version']}" for m in cat["modules"])
+        log(f"  {names}")
+        log(f"  (~{cat.get('zip_bytes', 0) / 1e6:.0f} MB download, "
+            f"{cat.get('total_bytes', 0) / 1e6:.0f} MB on disk)")
+    if not assume_yes:
+        ans = confirm("Install the Pro modules now? [y/N]: ").strip().lower()
+        if ans not in ("y", "yes"):
+            log("Skipped — you can run this later from the Secondary-development menu.")
+            return
+    try:
+        air_modules.install(robot, local=local, assume_yes=True, confirm=confirm, log=log)
+    except Exception as e:
+        log(f"Air-module install failed: {e}")
 
 
 def list_backups(robot):

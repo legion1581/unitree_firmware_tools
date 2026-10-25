@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "robot": "Go2",
+  "payload": "unitree_go2_air_modules_v1",
+  "purpose": "Pro-only modules for Air (secdev)",
+  "modules": [
+    {
+      "name": "4gcm",
+      "version": "1.1.3.1",
+      "files": 2,
+      "bytes": 196394,
+      "services": [
+        "4gcm"
+      ],
+      "source_pkg": "1.1.2/package_1.1.2.21_GO2_Edu_Max_Pro_1730188258661/package_1.1.2.21_GO2_Edu_Max_Pro"
+    },
+    {
+      "name": "advanced_sport",
+      "version": "1.0.0.6",
+      "files": 25,
+      "bytes": 4787472,
+      "services": [
+        "advanced_sport"
+      ],
+      "source_pkg": "1.1.2/package_1.1.2.21_GO2_Edu_Max_Pro_1730188258661/package_1.1.2.21_GO2_Edu_Max_Pro"
+    },
+    {
+      "name": "ai_sport",
+      "version": "1.0.4.46",
+      "files": 70,
+      "bytes": 55157537,
+      "services": [
+        "ai_sport"
+      ],
+      "source_pkg": "1.1.3/package_1.1.3.10_GO2_Edu_Max_Pro_1735557756726/package_1.1.3.10_GO2_Edu_Max_Pro"
+    },
+    {
+      "name": "chat_go",
+      "version": "1.9.2.3",
+      "files": 226,
+      "bytes": 19262003,
+      "services": [
+        "chat_go"
+      ],
+      "source_pkg": "1.1.11/package_1.1.11.5_GO2_Edu_Max_Pro_X_1761128358872/package_1.1.11.5_GO2_Edu_Max_Pro_X"
+    },
+    {
+      "name": "unitree_lidar_slam",
+      "version": "2.0.0.67",
+      "files": 13,
+      "bytes": 8856956,
+      "services": [
+        "unitree_lidar_slam"
+      ],
+      "source_pkg": "1.1.11/package_1.1.11.5_GO2_Edu_Max_Pro_X_1761128358872/package_1.1.11.5_GO2_Edu_Max_Pro_X"
+    },
+    {
+      "name": "utrack",
+      "version": "1.1.7.0",
+      "files": 8,
+      "bytes": 8414792,
+      "services": [
+        "utrack"
+      ],
+      "source_pkg": "1.1.11/package_1.1.11.5_GO2_Edu_Max_Pro_X_1761128358872/package_1.1.11.5_GO2_Edu_Max_Pro_X"
+    }
+  ],
+  "total_files": 344,
+  "total_bytes": 96675154,
+  "zip": "unitree_go2_air_modules_v1.zip",
+  "zip_md5": "756b6c1d74fec80fa9c704bf12102342",
+  "zip_bytes": 71450480
+}

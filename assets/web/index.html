@@ -296,6 +296,27 @@
     <pre class="log" id="log"></pre>
   </div>
 
+  <div class="panel" id="airPanel" style="display:none">
+    <div class="hd"><h3>Pro modules (Air)</h3><span class="sub" id="airSub"></span></div>
+    <div class="toggle">
+      <button class="primary" id="airBtn" onclick="askAirModules()">Install Pro modules</button>
+      <div>
+        <div class="state" id="airLabel">…</div>
+        <div class="note">Adds the modules a Go2 Air ships without — ai_sport, advanced_sport,
+          unitree_lidar_slam, chat_go, utrack, 4gcm (newest build of each). Enable secondary
+          development first. Reversible; originals are backed up.</div>
+      </div>
+    </div>
+    <ul id="airList" class="checks"></ul>
+    <div class="confirm" id="airConfirm">
+      <p id="airConfirmText"></p>
+      <div class="row">
+        <button class="primary" onclick="doAirInstall()">Confirm</button>
+        <button onclick="hideAirConfirm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="panel">
     <div class="hd"><h3>Checks</h3><span class="sub">what the robot reports</span></div>
     <ul class="checks" id="checks"></ul>
@@ -565,6 +586,28 @@ function renderSecdev(sd, probed){
   $("checks").innerHTML = (sd.checks||[]).map(c=>
     `<li><i class="dot ${c.state==="dim"?"":c.state}"></i><span class="lb">${esc(c.label)}</span>`+
     `<span class="val ${c.state}">${esc(c.value)}</span>${c.note?`<span class="nt">${esc(c.note)}</span>`:""}</li>`).join("");
+  renderAir(sd);
+}
+function renderAir(sd){
+  const air = sd.air;
+  const panel = $("airPanel");
+  if(!air || !air.is_air){ panel.style.display = "none"; return; }
+  panel.style.display = "";
+  const all = air.installed===air.count && air.count>0;
+  $("airSub").textContent = air.installed==null ? "" :
+    `${air.installed} of ${air.count} present` + (all ? " — all installed" : "");
+  $("airLabel").innerHTML = all
+    ? `All Pro modules <b class="ok">installed</b>`
+    : (air.installed ? `<b class="warn">${air.installed}/${air.count}</b> present`
+                     : `<b class="bad">none</b> installed`);
+  const on = sd.on || (sd.pending && sd.pending.action==="on");
+  const btn = $("airBtn");
+  btn.disabled = busy || !on;
+  btn.textContent = all ? "Reinstall Pro modules" : "Install Pro modules";
+  btn.title = on ? "" : "Enable secondary development first";
+  $("airList").innerHTML = (air.modules||[]).map(m=>
+    `<li><i class="dot ok"></i><span class="lb">${esc(m.name)}</span>`+
+    `<span class="val">v${esc(m.version)}</span><span class="nt">${fmtBytes(m.bytes)}</span></li>`).join("");
 }
 async function probe(){
   const b = $("probeBtn"); b.classList.add("spin"); b.disabled = true;
@@ -597,6 +640,23 @@ async function doToggle(){
   try{ const {job} = await api("/api/secdev","POST",{action, confirm:true}); poll(job); }
   catch(e){ $("log").style.display="block"; $("log").textContent = "error: "+e.message; setBusy(false); }
 }
+function askAirModules(){
+  if(!SD || !SD.air || busy) return;
+  const a = SD.air;
+  $("airConfirmText").textContent =
+    `Install ${a.count} Pro-only modules onto this Air? ~${fmtBytes(a.zip_bytes)} download, `+
+    `${fmtBytes(a.total_bytes)} on disk. The robot's services stop while files are written; `+
+    `originals are backed up. Power-cycle afterwards to load them.`;
+  $("airConfirm").style.display = "block";
+}
+function hideAirConfirm(){ $("airConfirm").style.display="none"; }
+async function doAirInstall(){
+  hideAirConfirm();
+  $("log").textContent=""; $("reboot").style.display="none";
+  setBusy(true);
+  try{ const {job} = await api("/api/air_modules","POST",{confirm:true}); poll(job); }
+  catch(e){ $("log").style.display="block"; $("log").textContent = "error: "+e.message; setBusy(false); }
+}
 function showPowerCycle(what){
   const on = /^Turn on/.test(what);
   $("pcText").textContent = `Secondary development was switched ${on?"on":"off"}. The new files load at the next power-on, `+
@@ -608,6 +668,7 @@ document.addEventListener("keydown", e=>{ if(e.key==="Escape") $("pcModal").clas
 let polling = null, busy = false;
 function setBusy(on){
   busy = on; $("sw").disabled = on || !!(SD&&SD.native);
+  const ab = $("airBtn"); if(ab) ab.disabled = on || !(SD&&SD.on);
   if(on) $("swlabel").textContent = "Working…";
 }
 function poll(id){
