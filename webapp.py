@@ -32,7 +32,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
 import platforms
-from features import air_modules, auth, partitions, prefs, secondary_dev, services, supervisor, webservice
+from features import air_modules, auth, network, partitions, prefs, secondary_dev, services, supervisor, webservice
 
 REPO = os.path.dirname(os.path.abspath(__file__))
 PAGE = os.path.join(REPO, "assets", "web", "index.html")
@@ -353,6 +353,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(secdev_summary(self.robot, probe=qs.get("probe", ["0"])[0] == "1"))
             if u.path == "/api/services":
                 return self._json(services.list_services(self.robot.root))
+            if u.path == "/api/network":
+                return self._json(network.status(self.robot.root))
             if u.path == "/api/backup":
                 return self._json({"areas": partitions.areas()})
             if u.path == "/api/backup/zip":
@@ -385,6 +387,7 @@ class Handler(BaseHTTPRequestHandler):
             route = {"/api/secdev": self._secdev_toggle,
                      "/api/air_modules": self._air_modules_install,
                      "/api/services": self._service_action,
+                     "/api/network": self._network,
                      "/api/console": lambda b: self._json(console_exec(b.get("cmd", ""), b.get("timeout"))),
                      "/api/guardian": self._guardian,
                      "/api/webservice": self._webservice,
@@ -538,6 +541,21 @@ class Handler(BaseHTTPRequestHandler):
 
     def _service_action(self, body):
         return self._json(services.action(body.get("name"), body.get("action"), self.robot.root))
+
+    # --- wifi AP / STA via the network_manager (bgatt) scripts ---
+    def _network(self, body):
+        root = self.robot.root
+        action = body.get("action")
+        if action == "ap":
+            return self._json(network.set_ap(body.get("ssid", ""), body.get("password", ""),
+                                             body.get("band", "2.4"), body.get("channel", "0"), root))
+        if action == "sta":
+            return self._json(network.set_sta(body.get("ssid", ""), body.get("password", ""), root))
+        if action == "stop":
+            return self._json(network.stop(root))
+        if action == "status":
+            return self._json(network.status(root))
+        return self._json({"error": "bad action (expected ap|sta|stop|status)"}, 400)
 
     # --- guardian / web service switches (quick, synchronous) ---
     def _guardian(self, body):

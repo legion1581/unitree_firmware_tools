@@ -245,6 +245,7 @@
     <a data-tab="status">Status</a>
     <a data-tab="secdev">Secondary development</a>
     <a data-tab="services">Services</a>
+    <a data-tab="network">Network</a>
     <a data-tab="backup">Backup</a>
     <a data-tab="settings">Settings</a>
     <a data-tab="console">Console</a>
@@ -337,6 +338,38 @@
     <pre class="log" id="svcout"></pre>
   </div>
   <p class="note">Read from <span class="mono">mscli listservice</span>. Click a service to start or stop it. Greyed names are disabled at boot.</p>
+</section>
+
+<!-- NETWORK -->
+<section id="tab-network">
+  <div class="panel">
+    <div class="hd"><h3>WiFi</h3><span class="sub" id="net-mode">…</span>
+      <div class="right"><button class="ghost" title="reload" onclick="loadNetwork()"><svg class="i"><use href="#i-refresh"/></svg></button></div>
+    </div>
+    <div class="bd"><dl class="kv" id="net-kv"></dl></div>
+  </div>
+  <div class="panel">
+    <div class="hd"><h3>Set WiFi mode</h3><span class="sub">via the robot's network_manager (bgatt) scripts</span></div>
+    <div class="bd">
+      <div class="row">
+        <label><input type="radio" name="netmode" value="sta" checked onchange="netModeUI()"> Join a network (STA)</label>
+        <label><input type="radio" name="netmode" value="ap" onchange="netModeUI()"> Create access point (AP)</label>
+      </div>
+      <div class="row"><input id="net-ssid" placeholder="SSID (network name)" style="flex:1" autocomplete="off" spellcheck="false"></div>
+      <div class="row"><input type="password" id="net-pass" placeholder="Password (blank = open network)" style="flex:1" autocomplete="off"></div>
+      <div class="row" id="net-ap-opts" style="display:none">
+        <label class="note">Band <select id="net-band"><option value="2.4">2.4 GHz</option><option value="5">5 GHz</option></select></label>
+        <label class="note">Channel <input type="number" id="net-chan" value="0" min="0" max="165" style="width:72px;padding:4px 6px"> (0 = auto)</label>
+      </div>
+      <div class="row">
+        <button class="primary" id="net-apply" onclick="applyNetwork()">Apply</button>
+        <button class="ghost" onclick="stopNetwork()">Stop WiFi</button>
+        <span class="note" id="net-msg"></span>
+      </div>
+      <p class="note">Saved to <span class="mono">/unitree/etc/wifi/WIFI_MODE</span> and re-applied at boot. Does not affect the wired <span class="mono">192.168.123.161</span> link.</p>
+    </div>
+    <pre class="log" id="net-out"></pre>
+  </div>
 </section>
 
 <!-- BACKUP -->
@@ -498,7 +531,7 @@ async function start(){
 }
 
 /* ---- tabs ---- */
-const TABS = ["status","secdev","services","backup","settings","console"];
+const TABS = ["status","secdev","services","network","backup","settings","console"];
 function showTab(t){
   if(!TABS.includes(t)) t = "status";
   TABS.forEach(x=>$("tab-"+x).classList.toggle("on", x===t));
@@ -506,6 +539,7 @@ function showTab(t){
   history.replaceState(null, "", "#"+t);
   clearInterval(svcTimer);
   if(t==="services"){ loadServices(); svcTimer = setInterval(loadServices, 5000); }
+  if(t==="network") loadNetwork();
   if(t==="console") setTimeout(()=>$("conIn").focus(), 30);
   if(t==="backup") loadParts();
 }
@@ -801,6 +835,51 @@ function toggleWebservice(){
   const on = !$("ws-sw").classList.contains("on");
   if(!on && !confirm("Switch the web UI service off? If this page is served by it, the page goes offline until you run ./start.sh on the robot.")) return;
   setSwitch("/api/webservice", on);
+}
+
+/* ---- network (AP / STA) ---- */
+function netModeUI(){
+  const ap = document.querySelector("input[name=netmode]:checked").value==="ap";
+  $("net-ap-opts").style.display = ap ? "flex" : "none";
+  $("net-pass").placeholder = ap ? "Password (8–63 characters)" : "Password (blank = open network)";
+}
+async function loadNetwork(){
+  try{
+    const s = await api("/api/network");
+    $("net-mode").textContent = s.available ? ("mode: "+s.mode) : "network_manager scripts not found";
+    $("net-kv").innerHTML = kv([
+      ["Mode", s.mode],
+      ["Interface", s.iface+(s.up?" · up":" · down")],
+      ["IP", s.ip||"-"],
+      ["AP SSID", s.ap_ssid||"-"],
+      ["STA SSID", s.sta_ssid||"-"],
+    ]);
+    $("net-apply").disabled = !s.available;
+  }catch(e){ if(!(e instanceof AuthError)) err(e.message); }
+}
+async function applyNetwork(){
+  const mode = document.querySelector("input[name=netmode]:checked").value;
+  const ssid = $("net-ssid").value.trim(), pass = $("net-pass").value;
+  if(!ssid){ $("net-msg").textContent = "enter an SSID"; return; }
+  const body = mode==="ap"
+    ? {action:"ap", ssid, password:pass, band:$("net-band").value, channel:$("net-chan").value}
+    : {action:"sta", ssid, password:pass};
+  $("net-apply").disabled = true; $("net-msg").textContent = "applying… (can take ~30s)"; $("net-out").textContent = "";
+  try{
+    const r = await api("/api/network","POST",body);
+    $("net-out").textContent = r.out||"";
+    $("net-msg").textContent = r.ok ? "done" : ("failed — exit "+r.rc);
+    loadNetwork();
+  }catch(e){ if(!(e instanceof AuthError)) $("net-msg").textContent = "error: "+e.message; }
+  finally{ $("net-apply").disabled = false; }
+}
+async function stopNetwork(){
+  if(!confirm("Stop WiFi (AP and STA) on wlan0?")) return;
+  $("net-msg").textContent = "stopping…"; $("net-out").textContent = "";
+  try{
+    const r = await api("/api/network","POST",{action:"stop"});
+    $("net-out").textContent = r.out||""; $("net-msg").textContent = "stopped"; loadNetwork();
+  }catch(e){ if(!(e instanceof AuthError)) $("net-msg").textContent = "error: "+e.message; }
 }
 
 /* ---- console ---- */
