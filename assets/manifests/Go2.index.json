@@ -11,6 +11,32 @@
   "note": "General manifest: lets the tool pick the right package when the device's firmware version is not one it has a specific package for, by matching the on-disk md5 of the 4 targets against each version's vanilla (original_md5) or patched md5 set. Many versions share byte-identical binaries; any member of a matching group installs correctly.",
   "versions": [
     {
+      "firmware": "1.1.1",
+      "package_id": "unitree_secondary_dev_go2_1.1.1",
+      "zip": "unitree_secondary_dev_go2_1.1.1_v2.zip",
+      "zip_md5": "e17719e00d852513b56e94b1f1b08197",
+      "zip_size": 51421397,
+      "package_version": 2,
+      "manifest": "Go2_1.1.1.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "2884f679ccca7bd626bff74ada109cde",
+          "patched_md5": "94a5bd8d623ea4777b0b4fdc326efa4b"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "81fcb1b9aa69eafda8ed87d566f3e27d",
+          "patched_md5": "49cdd8048bff65561d61ab6d981c76c6"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "650691493668a8fdba693e99501dfb6a",
+          "patched_md5": "40809eb7a22b78f9f0db44b8e243c081"
+        }
+      }
+    },
+    {
       "firmware": "1.1.2",
       "package_id": "unitree_secondary_dev_go2_1.1.2",
       "zip": "unitree_secondary_dev_go2_1.1.2_v2.zip",
