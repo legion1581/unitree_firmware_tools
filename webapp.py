@@ -213,20 +213,22 @@ def secdev_summary(robot, probe=False):
     pending = secondary_dev.power_cycle_pending()
     air = None
     if air_modules.is_air(robot):
-        cat = air_modules.catalog() or {}
+        ver = air_modules.catalog_for(robot) or {}      # modules for THIS firmware
+        mods = ver.get("modules", [])
         try:
-            st = air_modules.status(robot)
-            installed = sum(1 for r in st if r["present"])
+            installed = sum(1 for r in air_modules.status(robot) if r["present"])
         except Exception:
             installed = None
         air = {
             "is_air": True,
+            "firmware": robot.firmware_version()[0],
             "installed": installed,
-            "count": len(cat.get("modules", [])),
+            "count": len(mods),
             "modules": [{"name": m["name"], "version": m["version"], "bytes": m["bytes"]}
-                        for m in cat.get("modules", [])],
-            "zip_bytes": cat.get("zip_bytes"),
-            "total_bytes": cat.get("total_bytes"),
+                        for m in mods],
+            "zip_bytes": ver.get("zip_bytes"),
+            "total_bytes": ver.get("total_bytes"),
+            "supported": bool(mods),     # False if no v2 package for this firmware
         }
     return {
         # until the power-cycle, show what was switched to (DDS/ver still show the old state)
@@ -527,7 +529,8 @@ class Handler(BaseHTTPRequestHandler):
         if not air_modules.is_air(self.robot):
             return self._json({"error": "not a Go2 Air"}, 400)
         robot = self.robot
-        fn = lambda job: _then_mark("on", air_modules.install(robot, assume_yes=True, log=job.log))
+        fn = lambda job: _then_mark("on", secondary_dev.install_air_modules(
+            robot, assume_yes=True, log=job.log))
         job = start_job("Install Pro modules (Air)", fn)
         if not job:
             return self._json({"error": "another operation is already running"}, 409)

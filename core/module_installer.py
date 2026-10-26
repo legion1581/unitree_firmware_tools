@@ -98,7 +98,6 @@ class ModuleInstaller:
         `present` counts how many of the module's dest files already exist on the
         robot (0 = fresh add, == files = already fully present)."""
         report = []
-        manifest = {m["name"]: m for m in load_payload(pkg_dir)["modules"]}
         for name in names:
             mj = load_module_manifest(pkg_dir, name)
             modes = _load_modes(pkg_dir, name)
@@ -117,7 +116,6 @@ class ModuleInstaller:
                 "name": name, "version": mj.get("Version", "?"),
                 "files": len(ents), "present": present, "pkg_ok": pkg_ok,
                 "bytes": nbytes, "complete": pkg_ok == len(ents),
-                "meta": manifest.get(name, {}),
             })
         return report
 

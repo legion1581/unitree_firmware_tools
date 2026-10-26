@@ -593,6 +593,14 @@ function renderAir(sd){
   const panel = $("airPanel");
   if(!air || !air.is_air){ panel.style.display = "none"; return; }
   panel.style.display = "";
+  const btn = $("airBtn");
+  if(!air.supported){
+    $("airSub").textContent = "";
+    $("airLabel").innerHTML = `No module package for firmware ${esc(air.firmware||"?")} yet`;
+    btn.disabled = true; btn.textContent = "Install Pro modules";
+    $("airList").innerHTML = "";
+    return;
+  }
   const all = air.installed===air.count && air.count>0;
   $("airSub").textContent = air.installed==null ? "" :
     `${air.installed} of ${air.count} present` + (all ? " — all installed" : "");
@@ -601,7 +609,6 @@ function renderAir(sd){
     : (air.installed ? `<b class="warn">${air.installed}/${air.count}</b> present`
                      : `<b class="bad">none</b> installed`);
   const on = sd.on || (sd.pending && sd.pending.action==="on");
-  const btn = $("airBtn");
   btn.disabled = busy || !on;
   btn.textContent = all ? "Reinstall Pro modules" : "Install Pro modules";
   btn.title = on ? "" : "Enable secondary development first";
@@ -641,12 +648,12 @@ async function doToggle(){
   catch(e){ $("log").style.display="block"; $("log").textContent = "error: "+e.message; setBusy(false); }
 }
 function askAirModules(){
-  if(!SD || !SD.air || busy) return;
+  if(!SD || !SD.air || !SD.air.supported || busy) return;
   const a = SD.air;
   $("airConfirmText").textContent =
-    `Install ${a.count} Pro-only modules onto this Air? ~${fmtBytes(a.zip_bytes)} download, `+
-    `${fmtBytes(a.total_bytes)} on disk. The robot's services stop while files are written; `+
-    `originals are backed up. Power-cycle afterwards to load them.`;
+    `Install ${a.count} Pro-only modules (matched to firmware ${a.firmware}) onto this Air? `+
+    `~${fmtBytes(a.zip_bytes)} download, ${fmtBytes(a.total_bytes)} on disk. The robot's services `+
+    `stop while files are written; originals are backed up. Power-cycle afterwards to load them.`;
   $("airConfirm").style.display = "block";
 }
 function hideAirConfirm(){ $("airConfirm").style.display="none"; }

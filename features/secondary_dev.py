@@ -149,16 +149,15 @@ def resolve_package(robot, local=None, log=print):
     return pkg_dir, manifest, cleanup
 
 
-def enable(robot, local=None, assume_yes=False, confirm=input, log=print,
-           air_local=None, offer_air=True):
+def enable(robot, local=None, assume_yes=False, confirm=input, log=print, offer_air=True):
     """Enable secondary development. Returns True if a reboot is warranted.
 
     On a Go2 **Air**, once the patch is in, offers to add the Pro-only modules the
-    Air lacks (ai_sport/advanced_sport/unitree_lidar_slam/chat_go/utrack/4gcm) —
-    see features.air_modules. `air_local` is an optional local dir/zip for that
-    payload (else it is pulled from Yandex). `offer_air=False` suppresses the
-    offer entirely (the web UI drives the Air modules as a separate, explicit
-    action so a one-click enable never silently pulls ~70 MB)."""
+    Air lacks (ai_sport/advanced_sport/unitree_lidar_slam/chat_go/utrack/4gcm),
+    which a v2 package carries alongside the patch (see features.air_modules).
+    `offer_air=False` suppresses the offer (the web UI drives the Air modules as a
+    separate, explicit action so a one-click enable never silently writes ~90 MB
+    of modules)."""
     # 1) guardian gate (hard prerequisite on humanoids)
     if robot.platform in ("R1", "G1"):
         st = supervisor.status()
@@ -193,9 +192,10 @@ def enable(robot, local=None, assume_yes=False, confirm=input, log=print,
         if backup_dir:
             log(f"\nOriginals backed up to: {backup_dir}")
         log("Secondary development installed. Power-cycle the robot (turn OFF, then ON) to activate.")
-        # Go2 Air: offer to add the Pro-only modules it ships without.
+        # Go2 Air: offer to add the Pro-only modules it ships without, from this
+        # same package (v2 carries the firmware-matched module builds).
         if offer_air:
-            _offer_air_modules(robot, local=air_local, assume_yes=assume_yes,
+            _offer_air_modules(robot, pkg_dir, manifest, assume_yes=assume_yes,
                                confirm=confirm, log=log)
         return True
     finally:
@@ -203,26 +203,47 @@ def enable(robot, local=None, assume_yes=False, confirm=input, log=print,
             import shutil; shutil.rmtree(cleanup, ignore_errors=True)
 
 
-def _offer_air_modules(robot, local=None, assume_yes=False, confirm=input, log=print):
-    """On a Go2 Air, offer the Pro-only module add-on as a follow-up step."""
+def _offer_air_modules(robot, pkg_dir, manifest, assume_yes=False, confirm=input, log=print):
+    """On a Go2 Air, offer to add the Pro-only modules this package carries."""
     if not air_modules.is_air(robot):
         return
-    cat = air_modules.catalog()
-    log("\nThis is a Go2 AIR. It can also receive the Pro-only modules it ships without:")
-    if cat:
-        names = ", ".join(f"{m['name']} v{m['version']}" for m in cat["modules"])
-        log(f"  {names}")
-        log(f"  (~{cat.get('zip_bytes', 0) / 1e6:.0f} MB download, "
-            f"{cat.get('total_bytes', 0) / 1e6:.0f} MB on disk)")
+    names = air_modules.modules_in_package(pkg_dir, manifest)
+    if not names:
+        return
+    meta = (manifest.get("air_modules") or {})
+    log("\nThis is a Go2 AIR. This package also carries the Pro-only modules it ships without:")
+    log("  " + ", ".join(names))
+    if meta.get("total_bytes"):
+        log(f"  (~{meta['total_bytes'] / 1e6:.0f} MB on disk)")
     if not assume_yes:
         ans = confirm("Install the Pro modules now? [y/N]: ").strip().lower()
         if ans not in ("y", "yes"):
             log("Skipped — you can run this later from the Secondary-development menu.")
             return
     try:
-        air_modules.install(robot, local=local, assume_yes=True, confirm=confirm, log=log)
+        air_modules.install_from_package(robot, pkg_dir, manifest,
+                                         assume_yes=True, confirm=confirm, log=log)
     except Exception as e:
         log(f"Air-module install failed: {e}")
+
+
+def install_air_modules(robot, local=None, assume_yes=False, force=False,
+                        confirm=input, log=print):
+    """Standalone: install the Pro-only modules onto an Air from its secdev
+    package (resolved/downloaded like enable). Returns reboot-warranted."""
+    pkg_dir, manifest, cleanup = resolve_package(robot, local=local, log=log)
+    try:
+        if not air_modules.modules_in_package(pkg_dir, manifest):
+            log("This firmware's package carries no Air modules (it may be a v1 package). "
+                "Nothing to install.")
+            return False
+        return air_modules.install_from_package(
+            robot, pkg_dir, manifest, assume_yes=assume_yes, force=force,
+            confirm=confirm, log=log)
+    finally:
+        if cleanup:
+            import shutil
+            shutil.rmtree(cleanup, ignore_errors=True)
 
 
 def list_backups(robot):

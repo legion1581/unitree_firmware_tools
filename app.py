@@ -68,7 +68,7 @@ def _pick_backup(robot):
     return backups[labels.index(sel)]
 
 
-def secondary_dev_menu(robot, local=None, air_local=None):
+def secondary_dev_menu(robot, local=None):
     air = air_modules.is_air(robot)
     while True:
         choices = ["Status", "Enable", "Restore backup", "Restore factory"]
@@ -87,10 +87,10 @@ def secondary_dev_menu(robot, local=None, air_local=None):
                 for r in report:
                     print(f"    {r['name']:20s} {r['verdict']}")
         elif c == "Enable":
-            if secondary_dev.enable(robot, local=local, air_local=air_local):
+            if secondary_dev.enable(robot, local=local):
                 _power_cycle_notice()
         elif c == "Install Pro modules (Air)":
-            if air_modules.install(robot, local=air_local):
+            if secondary_dev.install_air_modules(robot, local=local):
                 _power_cycle_notice()
         elif c == "Restore backup":
             b = _pick_backup(robot)
@@ -123,7 +123,6 @@ def main():
     ap = argparse.ArgumentParser(description="Unitree firmware tools (R1/G1/Go2)")
     ap.add_argument("--platform", help="force platform (R1/G1/Go2) instead of auto-detect")
     ap.add_argument("--package", help="local secondary-dev package (dir or .zip) instead of download")
-    ap.add_argument("--air-modules", help="local Air Pro-modules payload (dir or .zip) instead of download")
     ap.add_argument("--root", default="", help="sandbox root prefix (testing)")
     args = ap.parse_args()
 
@@ -136,7 +135,7 @@ def main():
         if c == "Robot info":
             refresh_info(robot)
         elif c == "Secondary development":
-            if secondary_dev_menu(robot, local=args.package, air_local=args.air_modules):
+            if secondary_dev_menu(robot, local=args.package):
                 break
         elif c == "Guardian failsafe":
             if guardian_menu():
