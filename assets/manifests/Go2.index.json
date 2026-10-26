@@ -13,10 +13,10 @@
     {
       "firmware": "1.1.1",
       "package_id": "unitree_secondary_dev_go2_1.1.1",
-      "zip": "unitree_secondary_dev_go2_1.1.1_v2.zip",
-      "zip_md5": "e17719e00d852513b56e94b1f1b08197",
-      "zip_size": 51421397,
-      "package_version": 2,
+      "zip": "unitree_secondary_dev_go2_1.1.1_v3.zip",
+      "zip_md5": "33e58b980bd1d08c1461298a3c270ec3",
+      "zip_size": 51421420,
+      "package_version": 3,
       "manifest": "Go2_1.1.1.json",
       "files": {
         "master_service": {
@@ -39,8 +39,8 @@
     {
       "firmware": "1.1.2",
       "package_id": "unitree_secondary_dev_go2_1.1.2",
-      "zip": "unitree_secondary_dev_go2_1.1.2_v2.zip",
-      "zip_md5": "ba5257699fae4d6e5ff7a79b59ce7dfb",
+      "zip": "unitree_secondary_dev_go2_1.1.2_v3.zip",
+      "zip_md5": "0fb1e638750ac9213c7ab27e69682534",
       "zip_size": 77630127,
       "manifest": "Go2_1.1.2.json",
       "files": {
@@ -65,14 +65,14 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     },
     {
       "firmware": "1.1.3",
       "package_id": "unitree_secondary_dev_go2_1.1.3",
-      "zip": "unitree_secondary_dev_go2_1.1.3_v2.zip",
-      "zip_md5": "5451a61133517d70df776c3f364d83f0",
-      "zip_size": 85938165,
+      "zip": "unitree_secondary_dev_go2_1.1.3_v3.zip",
+      "zip_md5": "fb15b6783c4d1eaec9a08173dbf2f331",
+      "zip_size": 96339473,
       "manifest": "Go2_1.1.3.json",
       "files": {
         "master_service": {
@@ -96,14 +96,14 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     },
     {
       "firmware": "1.1.4",
       "package_id": "unitree_secondary_dev_go2_1.1.4",
-      "zip": "unitree_secondary_dev_go2_1.1.4_v2.zip",
-      "zip_md5": "34b0bc5ebb0b54ea04721def81a01ae4",
-      "zip_size": 86007216,
+      "zip": "unitree_secondary_dev_go2_1.1.4_v3.zip",
+      "zip_md5": "d6bf608e98c55eca7d448ad06e75edcc",
+      "zip_size": 96417191,
       "manifest": "Go2_1.1.4.json",
       "files": {
         "master_service": {
@@ -127,14 +127,14 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     },
     {
       "firmware": "1.1.6",
       "package_id": "unitree_secondary_dev_go2_1.1.6",
-      "zip": "unitree_secondary_dev_go2_1.1.6_v2.zip",
-      "zip_md5": "7e888cdf80f519a52aeb2d98184ef913",
-      "zip_size": 86072561,
+      "zip": "unitree_secondary_dev_go2_1.1.6_v3.zip",
+      "zip_md5": "65ff084740a258b69bad3a4a5e1fecd2",
+      "zip_size": 96482533,
       "manifest": "Go2_1.1.6.json",
       "files": {
         "master_service": {
@@ -158,14 +158,14 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     },
     {
       "firmware": "1.1.7",
       "package_id": "unitree_secondary_dev_go2_1.1.7",
-      "zip": "unitree_secondary_dev_go2_1.1.7_v2.zip",
-      "zip_md5": "70826d8b6edbc72cd05c983536ff1a98",
-      "zip_size": 86060414,
+      "zip": "unitree_secondary_dev_go2_1.1.7_v3.zip",
+      "zip_md5": "82120c8933596ae4f9d457cf9f022f70",
+      "zip_size": 96484977,
       "manifest": "Go2_1.1.7.json",
       "files": {
         "master_service": {
@@ -189,14 +189,14 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     },
     {
       "firmware": "1.1.11",
       "package_id": "unitree_secondary_dev_go2_1.1.11",
-      "zip": "unitree_secondary_dev_go2_1.1.11_v2.zip",
-      "zip_md5": "af280be6d0791deb536e7c76a1365975",
-      "zip_size": 84707169,
+      "zip": "unitree_secondary_dev_go2_1.1.11_v3.zip",
+      "zip_md5": "fa547d49d36d9da6d773485cb9287d30",
+      "zip_size": 112640121,
       "manifest": "Go2_1.1.11.json",
       "files": {
         "master_service": {
@@ -220,14 +220,14 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     },
     {
       "firmware": "1.1.14",
       "package_id": "unitree_secondary_dev_go2_1.1.14",
-      "zip": "unitree_secondary_dev_go2_1.1.14_v2.zip",
-      "zip_md5": "dd49c29c70397d0507c8bfd4433a3c55",
-      "zip_size": 84707169,
+      "zip": "unitree_secondary_dev_go2_1.1.14_v3.zip",
+      "zip_md5": "3dd3a4e81a5e1de0bef8152b2e1ce31e",
+      "zip_size": 112640121,
       "manifest": "Go2_1.1.14.json",
       "files": {
         "master_service": {
@@ -251,14 +251,14 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     },
     {
       "firmware": "1.1.15",
       "package_id": "unitree_secondary_dev_go2_1.1.15",
-      "zip": "unitree_secondary_dev_go2_1.1.15_v2.zip",
-      "zip_md5": "232b623574144c23e765bd93e193e889",
-      "zip_size": 84707169,
+      "zip": "unitree_secondary_dev_go2_1.1.15_v3.zip",
+      "zip_md5": "aca1ba566822ee914395763d34b0aa75",
+      "zip_size": 112640121,
       "manifest": "Go2_1.1.15.json",
       "files": {
         "master_service": {
@@ -282,7 +282,7 @@
           "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
         }
       },
-      "package_version": 2
+      "package_version": 3
     }
   ]
 }

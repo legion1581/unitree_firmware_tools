@@ -22,9 +22,11 @@ import os
 
 from core import module_installer
 
-# the six Pro-only modules an Air lacks (for status display / ordering)
-TARGET_MODULES = ["4gcm", "advanced_sport", "ai_sport",
-                  "unitree_lidar_slam", "utrack", "chat_go"]
+# the Pro-only modules an Air lacks (for status display / ordering). Up to 8;
+# gesture_recognition and pet_go only exist from fw 1.1.3 on, so early-firmware
+# packages carry 6. The authoritative per-package set is manifest["modules"].
+TARGET_MODULES = ["4gcm", "advanced_sport", "ai_sport", "unitree_lidar_slam",
+                  "utrack", "chat_go", "gesture_recognition", "pet_go"]
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CATALOG_FILE = {"Go2": os.path.join(REPO, "assets", "manifests", "Go2.air_modules.json")}

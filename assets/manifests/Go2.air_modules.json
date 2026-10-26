@@ -7,7 +7,9 @@
     "ai_sport",
     "chat_go",
     "unitree_lidar_slam",
-    "utrack"
+    "utrack",
+    "gesture_recognition",
+    "pet_go"
   ],
   "versions": {
     "1.1.1": {
@@ -69,7 +71,7 @@
       ],
       "total_files": 286,
       "total_bytes": 64477264,
-      "zip_bytes": 51421397
+      "zip_bytes": 51421420
     },
     "1.1.2": {
       "modules": [
@@ -187,11 +189,29 @@
           "services": [
             "utrack"
           ]
+        },
+        {
+          "name": "gesture_recognition",
+          "version": "1.0.0.3",
+          "files": 303,
+          "bytes": 7883083,
+          "services": [
+            "gesture_recognition"
+          ]
+        },
+        {
+          "name": "pet_go",
+          "version": "1.0.0.31",
+          "files": 445,
+          "bytes": 5012683,
+          "services": [
+            "pet_go"
+          ]
         }
       ],
-      "total_files": 324,
-      "total_bytes": 95785959,
-      "zip_bytes": 85938165
+      "total_files": 1072,
+      "total_bytes": 108681725,
+      "zip_bytes": 96339473
     },
     "1.1.4": {
       "modules": [
@@ -248,11 +268,29 @@
           "services": [
             "utrack"
           ]
+        },
+        {
+          "name": "gesture_recognition",
+          "version": "1.0.0.4",
+          "files": 303,
+          "bytes": 7883087,
+          "services": [
+            "gesture_recognition"
+          ]
+        },
+        {
+          "name": "pet_go",
+          "version": "1.0.0.35",
+          "files": 448,
+          "bytes": 5039458,
+          "services": [
+            "pet_go"
+          ]
         }
       ],
-      "total_files": 331,
-      "total_bytes": 96139695,
-      "zip_bytes": 86007216
+      "total_files": 1082,
+      "total_bytes": 109062240,
+      "zip_bytes": 96417191
     },
     "1.1.6": {
       "modules": [
@@ -309,11 +347,29 @@
           "services": [
             "utrack"
           ]
+        },
+        {
+          "name": "gesture_recognition",
+          "version": "1.0.0.4",
+          "files": 303,
+          "bytes": 7883087,
+          "services": [
+            "gesture_recognition"
+          ]
+        },
+        {
+          "name": "pet_go",
+          "version": "1.0.0.35",
+          "files": 448,
+          "bytes": 5039458,
+          "services": [
+            "pet_go"
+          ]
         }
       ],
-      "total_files": 331,
-      "total_bytes": 96491284,
-      "zip_bytes": 86072561
+      "total_files": 1082,
+      "total_bytes": 109413829,
+      "zip_bytes": 96482533
     },
     "1.1.7": {
       "modules": [
@@ -370,11 +426,29 @@
           "services": [
             "utrack"
           ]
+        },
+        {
+          "name": "gesture_recognition",
+          "version": "1.0.0.4",
+          "files": 303,
+          "bytes": 7883087,
+          "services": [
+            "gesture_recognition"
+          ]
+        },
+        {
+          "name": "pet_go",
+          "version": "1.0.0.71",
+          "files": 450,
+          "bytes": 5090203,
+          "services": [
+            "pet_go"
+          ]
         }
       ],
-      "total_files": 331,
-      "total_bytes": 96460040,
-      "zip_bytes": 86060414
+      "total_files": 1084,
+      "total_bytes": 109433330,
+      "zip_bytes": 96484977
     },
     "1.1.11": {
       "modules": [
@@ -431,11 +505,29 @@
           "services": [
             "utrack"
           ]
+        },
+        {
+          "name": "gesture_recognition",
+          "version": "1.0.0.4",
+          "files": 303,
+          "bytes": 7883087,
+          "services": [
+            "gesture_recognition"
+          ]
+        },
+        {
+          "name": "pet_go",
+          "version": "1.0.0.76",
+          "files": 459,
+          "bytes": 23009701,
+          "services": [
+            "pet_go"
+          ]
         }
       ],
-      "total_files": 344,
-      "total_bytes": 96675154,
-      "zip_bytes": 84707169
+      "total_files": 1106,
+      "total_bytes": 127567942,
+      "zip_bytes": 112640121
     },
     "1.1.14": {
       "modules": [
@@ -492,11 +584,29 @@
           "services": [
             "utrack"
           ]
+        },
+        {
+          "name": "gesture_recognition",
+          "version": "1.0.0.4",
+          "files": 303,
+          "bytes": 7883087,
+          "services": [
+            "gesture_recognition"
+          ]
+        },
+        {
+          "name": "pet_go",
+          "version": "1.0.0.76",
+          "files": 459,
+          "bytes": 23009701,
+          "services": [
+            "pet_go"
+          ]
         }
       ],
-      "total_files": 344,
-      "total_bytes": 96675154,
-      "zip_bytes": 84707169
+      "total_files": 1106,
+      "total_bytes": 127567942,
+      "zip_bytes": 112640121
     },
     "1.1.15": {
       "modules": [
@@ -553,11 +663,29 @@
           "services": [
             "utrack"
           ]
+        },
+        {
+          "name": "gesture_recognition",
+          "version": "1.0.0.4",
+          "files": 303,
+          "bytes": 7883087,
+          "services": [
+            "gesture_recognition"
+          ]
+        },
+        {
+          "name": "pet_go",
+          "version": "1.0.0.76",
+          "files": 459,
+          "bytes": 23009701,
+          "services": [
+            "pet_go"
+          ]
         }
       ],
-      "total_files": 344,
-      "total_bytes": 96675154,
-      "zip_bytes": 84707169
+      "total_files": 1106,
+      "total_bytes": 127567942,
+      "zip_bytes": 112640121
     }
   }
 }
