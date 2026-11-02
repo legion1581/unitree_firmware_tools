@@ -356,7 +356,8 @@ def _primary_net():
 
 
 def _shutdown_script(mode, target_dev, stage_dev, image, cores=4, use_pigz=False,
-                     debug=False, net_if="None", net_cidr="None", grace=600):
+                     debug=False, net_if="None", net_cidr="None", grace=600,
+                     final_action="reboot"):
     """The handler that runs as PID1 in the shutdown ramfs, with the real root
     unmounted. p8 is mounted at /stage for the log and (real/dry) the staged
     image or (backup) the destination folder. A "backup" images p7 with pigz
@@ -371,6 +372,10 @@ def _shutdown_script(mode, target_dev, stage_dev, image, cores=4, use_pigz=False
     complabel = f"pigz-p{cores}" if use_pigz else "gzip"
     dbg = "1" if debug else "0"
     dbgtag = ", DEBUG" if debug else ""
+    poff = final_action == "poweroff"            # real flash: power OFF, not reboot
+    fin_word = "powering off" if poff else "rebooting"
+    fin_cmd = "poweroff" if poff else "reboot"
+    fin_sysrq = "o" if poff else "b"
     return f"""#!/bin/busybox sh
 # flash/backup handler: runs as PID1 in the shutdown ramfs (real root unmounted).
 BB=/bin/busybox
@@ -458,11 +463,11 @@ case "{mode}" in
 esac
 $BB sync
 if [ "{dbg}" = "1" ]; then log "debug: holding in pivot {grace}s (nc :2323 up); 'reboot -f' to leave early"; $BB sleep {grace}; fi
-log "=== handler done; rebooting ==="
+log "=== handler done; {fin_word} ==="
 $BB umount /stage 2>/dev/null
 $BB sync
-$BB reboot -f 2>/dev/null
-$BB echo b > /proc/sysrq-trigger 2>/dev/null
+$BB {fin_cmd} -f 2>/dev/null
+$BB echo {fin_sysrq} > /proc/sysrq-trigger 2>/dev/null
 while : ; do $BB sleep 5; done
 """
 
@@ -489,7 +494,8 @@ def disarm(log=None):
         log("disarmed: /run/initramfs removed; next reboot is normal")
 
 
-def arm(mode="dry", image_name=STAGE_IMG, log=None, debug=False, require_rootfs=True):
+def arm(mode="dry", image_name=STAGE_IMG, log=None, debug=False, require_rootfs=True,
+        final_action="reboot"):
     """Build the shutdown-pivot ramfs so the NEXT reboot runs the handler.
     mode: "dry" (decompress + measure, no write), "real" (write p7 from the
     staged image), "backup" (image p7 with pigz into the p8 backup store — no
@@ -533,7 +539,8 @@ def arm(mode="dry", image_name=STAGE_IMG, log=None, debug=False, require_rootfs=
         shutil.copy2(src, dst)
     script = _shutdown_script(mode, tgt["dev"], stage_dev, image_name,
                               cores=cores, use_pigz=bool(pigz), debug=debug,
-                              net_if=net_if or "None", net_cidr=net_cidr or "None")
+                              net_if=net_if or "None", net_cidr=net_cidr or "None",
+                              final_action=final_action)
     sd = os.path.join(RAMFS, "shutdown")
     with open(sd, "w") as f:
         f.write(script)

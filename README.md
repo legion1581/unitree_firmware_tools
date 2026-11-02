@@ -1,6 +1,10 @@
 # Unitree Firmware Tools
 
-![version](https://img.shields.io/badge/version-2.1.14-blue)
+![version](https://img.shields.io/badge/version-2.1.15-blue)
+![Go2](https://img.shields.io/badge/Go2-1.1.1--1.1.15-brightgreen)
+![G1](https://img.shields.io/badge/G1-1.4.0--1.5.4-brightgreen)
+![R1](https://img.shields.io/badge/R1-1.4.2-brightgreen)
+![secondary development](https://img.shields.io/badge/secondary%20development-unlock-orange)
 
 Unitree's **AIR** and **PRO** robots ship with **secondary development locked**: you can't send
 low-level commands or drive the robot from the SDK. **This tool unlocks it.** It runs on the robot,
@@ -24,8 +28,8 @@ resulting from its use.
 | Robot | Firmware versions |
 |---|---|
 | **R1** | 1.4.2 |
-| **G1** | 1.4.0, 1.4.5, 1.5.3, 1.5.4 |
-| **Go2** | 1.1.2, 1.1.3, 1.1.4, 1.1.6, 1.1.7, 1.1.11, 1.1.14, 1.1.15 |
+| **G1** | 1.4.0, 1.4.5, 1.4.9, 1.5.3, 1.5.4 |
+| **Go2** | 1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.1.6, 1.1.7, 1.1.11, 1.1.14, 1.1.15 |
 
 AIR and PRO editions. EDU robots already have secondary development, so the tool shows it as on
 and leaves them alone. A firmware that isn't listed is often still supported: the tool fingerprints

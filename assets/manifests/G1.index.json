@@ -71,6 +71,36 @@
       }
     },
     {
+      "firmware": "1.4.9",
+      "package_id": "unitree_secondary_dev_g1_1.4.9",
+      "zip": "unitree_secondary_dev_g1_1.4.9_v1.zip",
+      "zip_md5": "96287320585725db50da46d4202006ad",
+      "zip_size": 13801817,
+      "manifest": "G1_1.4.9.json",
+      "files": {
+        "master_service": {
+          "dest": "/unitree/module/master_service/master_service",
+          "original_md5": "3be0730d733addd1c144297033087d96",
+          "patched_md5": "7994ab1ed91be212e15fa10ae741f6bf"
+        },
+        "basic_service_check": {
+          "dest": "/unitree/robot/tool/basic_service_check",
+          "original_md5": "4d2bc437a0a89701ab47d71ac036eda6",
+          "patched_md5": "0ef5b7c655dee391b03c72584c31ac42"
+        },
+        "basic_service": {
+          "dest": "/unitree/module/basic_service/basic_service",
+          "original_md5": "2ee0ab12b326619c1a3bbfb9c69f17b8",
+          "patched_md5": "d1bbd2176e8fe8787ead5f59df81f226"
+        },
+        "net-init": {
+          "dest": "/unitree/etc/master_service/cmd/net-init",
+          "original_md5": "3897de817eab709df623b795e99235b7",
+          "patched_md5": "a9fabb08bd693c191f188663f938ca1a"
+        }
+      }
+    },
+    {
       "firmware": "1.5.3",
       "package_id": "unitree_secondary_dev_g1_1.5.3",
       "zip": "unitree_secondary_dev_g1_1.5.3_v1.zip",

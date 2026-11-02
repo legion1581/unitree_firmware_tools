@@ -20,7 +20,7 @@ from core import installer, secdev, selector, service_control, yandex
 from . import air_modules, supervisor
 
 
-def stop_stack_guarded(robot, assume_yes=False, confirm=input, log=print, crouch=True):
+def stop_stack_guarded(robot, assume_yes=False, confirm=input, log=print, crouch=False):
     """Stop the running stack the OTA way (full stop incl. master) before we
     replace any binary, with a motion-safety gate. Returns True if stopped.
 

@@ -673,19 +673,22 @@ class Handler(BaseHTTPRequestHandler):
             if mode == "real" and body.get("confirm") != "FLASH":
                 return self._json({"error": "type FLASH to confirm a real write to p7"}, 400)
             lines = []
-            # lower the dog to the ground first, the OTA way, so the reboot's
-            # motor release can't drop it (Go2; no-op elsewhere / if skipped)
-            if body.get("crouch", True):
-                from core import service_control
-                service_control.crouch(self.robot.platform, log=lines.append)
+            # A real flash powers OFF when done (default) so the dog settles to the
+            # ground as the motors de-energize and stays down — safer than rebooting
+            # straight back into motion. Dry-runs reboot (they write nothing).
+            poweroff = mode == "real" and body.get("poweroff", True)
+            final = "poweroff" if poweroff else "reboot"
             try:
                 plan = flash.arm(mode=mode, image_name=body.get("image", flash.STAGE_IMG),
-                                 log=lines.append, require_rootfs=not bool(body.get("force")))
+                                 log=lines.append, require_rootfs=not bool(body.get("force")),
+                                 final_action=final)
             except (ValueError, IOError) as e:
                 return self._json({"error": str(e)}, 400)
-            # reboot just after this reply goes out, so the shutdown-pivot runs
-            _after_reply(lambda: subprocess.run(["systemctl", "reboot"]), delay=1.5)
-            return self._json({"ok": True, "rebooting": True, "plan": plan, "lines": lines})
+            # trigger the shutdown transition just after this reply; the pivot runs
+            # during it and ends by rebooting or powering off per `final`.
+            _after_reply(lambda: subprocess.run(["systemctl", final]), delay=1.5)
+            return self._json({"ok": True, "rebooting": True, "poweroff": poweroff,
+                               "plan": plan, "lines": lines})
         return self._json({"error": "bad action"}, 400)
 
     def _update_action(self, body):

@@ -1,0 +1,84 @@
+{
+  "schema": 1,
+  "robot": "G1",
+  "firmware": "1.4.9",
+  "package_id": "unitree_secondary_dev_g1_1.4.9",
+  "package_version": 1,
+  "created": "2026-10-28T04:55:24Z",
+  "title": "G1 1.4.9 secondary development",
+  "description": "Secondary development enablement package for G1 firmware 1.4.9.",
+  "reboot_required": true,
+  "has_factory": true,
+  "deploy_order": [
+    "master_service",
+    "basic_service_check",
+    "basic_service",
+    "net-init"
+  ],
+  "files": [
+    {
+      "name": "master_service",
+      "dest": "/unitree/module/master_service/master_service",
+      "mode": "0755",
+      "patched": {
+        "path": "patched/master_service",
+        "md5": "7994ab1ed91be212e15fa10ae741f6bf",
+        "size": 20571720
+      },
+      "original_md5": "3be0730d733addd1c144297033087d96",
+      "factory": {
+        "path": "factory/master_service",
+        "md5": "3be0730d733addd1c144297033087d96",
+        "size": 9241288
+      }
+    },
+    {
+      "name": "basic_service_check",
+      "dest": "/unitree/robot/tool/basic_service_check",
+      "mode": "0755",
+      "patched": {
+        "path": "patched/basic_service_check",
+        "md5": "0ef5b7c655dee391b03c72584c31ac42",
+        "size": 3912952
+      },
+      "original_md5": "4d2bc437a0a89701ab47d71ac036eda6",
+      "factory": {
+        "path": "factory/basic_service_check",
+        "md5": "4d2bc437a0a89701ab47d71ac036eda6",
+        "size": 1657720
+      }
+    },
+    {
+      "name": "basic_service",
+      "dest": "/unitree/module/basic_service/basic_service",
+      "mode": "0755",
+      "patched": {
+        "path": "patched/basic_service",
+        "md5": "d1bbd2176e8fe8787ead5f59df81f226",
+        "size": 5469576
+      },
+      "original_md5": "2ee0ab12b326619c1a3bbfb9c69f17b8",
+      "factory": {
+        "path": "factory/basic_service",
+        "md5": "2ee0ab12b326619c1a3bbfb9c69f17b8",
+        "size": 5469576
+      }
+    },
+    {
+      "name": "net-init",
+      "dest": "/unitree/etc/master_service/cmd/net-init",
+      "mode": "0644",
+      "patched": {
+        "path": "patched/net-init",
+        "md5": "a9fabb08bd693c191f188663f938ca1a",
+        "size": 651
+      },
+      "original_md5": "3897de817eab709df623b795e99235b7",
+      "factory": {
+        "path": "factory/net-init",
+        "md5": "3897de817eab709df623b795e99235b7",
+        "size": 693
+      }
+    }
+  ]
+}
