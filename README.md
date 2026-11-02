@@ -1,5 +1,7 @@
 # Unitree Firmware Tools
 
+![version](https://img.shields.io/badge/version-2.1.14-blue)
+
 Unitree's **AIR** and **PRO** robots ship with **secondary development locked**: you can't send
 low-level commands or drive the robot from the SDK. **This tool unlocks it.** It runs on the robot,
 flips secondary development on with one switch, keeps backups so you can always go back, and

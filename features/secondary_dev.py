@@ -20,15 +20,17 @@ from core import installer, secdev, selector, service_control, yandex
 from . import air_modules, supervisor
 
 
-def stop_stack_guarded(robot, assume_yes=False, confirm=input, log=print):
+def stop_stack_guarded(robot, assume_yes=False, confirm=input, log=print, crouch=True):
     """Stop the running stack the OTA way (full stop incl. master) before we
     replace any binary, with a motion-safety gate. Returns True if stopped.
 
     Patched files only take effect on reboot, but a live service can rewrite the
     file we just patched — so we stop first, exactly like Install.CmdPreList.
+    crouch: on a Go2, lower it to the ground (OTA zero-position) before stopping.
     """
     if robot.platform not in ("R1", "G1"):
-        return service_control.stop_stack(robot.platform, include_master=True, log=log)
+        return service_control.stop_stack(robot.platform, include_master=True,
+                                          log=log, crouch_first=crouch)
     log("\n⚠  R1/G1 is a STANDING humanoid. Stopping the motion stack will drop it.")
     log("   Lay the robot down / secure it on a stand BEFORE continuing.")
     if not assume_yes:

@@ -10,3 +10,8 @@ MAJ="$(printf '%s' "$V" | cut -d. -f1)"; MIN="$(printf '%s' "$V" | cut -d. -f2)"
 NEW="${MAJ:-2}.${MIN:-0}.$(( ${PAT:-0} + 1 ))"
 printf '%s\n' "$NEW" > VERSION
 git add VERSION
+# keep the README version badge in sync with VERSION
+if [ -f README.md ]; then
+  sed -i -E "s#(badge/version-)[0-9]+\.[0-9]+\.[0-9]+#\1${NEW}#g" README.md
+  git add README.md
+fi

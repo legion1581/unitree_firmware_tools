@@ -737,6 +737,7 @@ function askToggle(){
       + " The robot's services stop while files are replaced.";
     if(SD.humanoid) t += " Put the robot on the hoist or lay it down first.";
   }
+  if(!SD.humanoid) t += " The dog crouches to the ground first (OTA zero-position move), so releasing the motors won't drop it.";
   $("confirmText").textContent = t;
   $("confirm").style.display = "block";
 }
@@ -1014,7 +1015,8 @@ async function loadFlash(){
   h += `<div class="row" style="gap:10px;align-items:center;flex-wrap:wrap">`+
        `<input type="file" id="flashFile" accept=".gz,.img">`+
        `<span class="note" id="flashMsg"></span>`+
-       `<button class="primary" style="margin-left:auto" onclick="flashGo(false)">Flash</button></div>`+
+       `<label class="note" title="lower the dog to the ground before the reboot (OTA zero-position move)" style="margin-left:auto;display:flex;align-items:center;gap:6px"><input type="checkbox" id="flashCrouch" checked> crouch first</label>`+
+       `<button class="primary" onclick="flashGo(false)">Flash</button></div>`+
        `<div style="height:6px;background:var(--sunken);border-radius:4px;margin:10px 0;display:none" id="flashBar"><div style="height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .3s" id="flashBarIn"></div></div>`;
   $("flashBody").innerHTML = h;
   $("flashHelp").innerHTML = `<details class="help"><summary>How flashing works</summary><p class="note" style="margin-top:8px">Pick a rootfs <span class="mono">.img.gz</span> from your computer and flash it to <span class="mono">${esc(t.dev)}</span>. It's uploaded to the robot, then written during a reboot, and the robot boots into it (~3 min). <b>Back up first</b> — a failed write needs USB (maskrom) recovery.</p></details>`;
@@ -1033,26 +1035,72 @@ function flashUploadFile(f){
 async function flashGo(dry){
   const f = $("flashFile").files[0];
   if(!f){ $("flashMsg").innerHTML = `<span class="bad">choose an .img.gz first</span>`; return; }
-  if(!dry && !(await uiConfirm(`Flash "${f.name}" to p7 (rootfs)?\n\nThis overwrites the running system and reboots into the new image. Make sure you have a backup — a failed write needs USB recovery.`, {danger:true, ok:"Flash", title:"Flash p7"}))) return;
+  const crouch = $("flashCrouch") ? $("flashCrouch").checked : true;
+  if(!dry && !(await uiConfirm(`Flash "${f.name}" to p7 (rootfs)?\n\n${crouch?"The dog will crouch to the ground first, then it ":"It "}overwrites the running system and reboots into the new image. Make sure you have a backup — a failed write needs USB recovery.`, {danger:true, ok:"Flash", title:"Flash p7"}))) return;
   try{
     setFlashBar(0);
     const up = await flashUploadFile(f);
     if(!up.ok){ $("flashMsg").innerHTML = `<span class="bad">${esc(up.error||"upload failed")}</span>`; return; }
     $("flashMsg").textContent = "uploaded "+fmtBytes(up.bytes)+" — verifying…";
     const v = await api("/api/flash","POST",{action:"verify"});
-    if(!v.ok){ $("flashMsg").innerHTML = `<span class="bad">${esc(v.error||"image failed verification")}</span>`; return; }
-    $("flashMsg").innerHTML = `<span class="ok">image OK (ext4 ${fmtBytes(v.fs_bytes)})</span> — ${dry?"starting dry-run…":"flashing…"}`;
-    const r = await api("/api/flash","POST",{action:"flash",mode:dry?"dry":"real",confirm:dry?true:"FLASH"});
-    if(r.error){ $("flashMsg").innerHTML = `<span class="bad">${esc(r.error)}</span>`; return; }
-    if(r.rebooting){
-      $("flashBody").innerHTML = `<p class="${dry?'warn':'bad'}"><b>Rebooting to ${dry?'dry-run':'flash'} p7.</b> The UI and SSH drop now; reconnect in ~2–3 minutes.${dry?' This writes nothing to p7.':' The robot boots into the new rootfs.'} The result is in the flash log on p8.</p>`;
+    let force = false;
+    if(!v.ok){
+      if(v.label_mismatch){
+        if(!(await uiConfirm(`⚠ The image's ext4 volume label is "${v.label||"?"}", not "linuxroot" — this may NOT be a Go2 rootfs.\n\nFlashing the wrong image to p7 can brick the robot (USB maskrom recovery needed). Flash it anyway?`, {danger:true, ok:"Flash anyway", title:"Label mismatch"}))){
+          $("flashMsg").innerHTML = `<span class="bad">${esc(v.error)}</span>`; return;
+        }
+        force = true;
+      } else { $("flashMsg").innerHTML = `<span class="bad">${esc(v.error||"image failed verification")}</span>`; return; }
     }
+    const lbl = v.label ? ` "${esc(v.label)}"` : "";
+    $("flashMsg").innerHTML = `<span class="${force?'warn':'ok'}">image ${force?'accepted (label override)':'OK'} — ext4${lbl}, ${fmtBytes(v.fs_bytes)}</span> — ${dry?"starting dry-run…":"flashing…"}`;
+    const r = await api("/api/flash","POST",{action:"flash",mode:dry?"dry":"real",confirm:dry?true:"FLASH",crouch,force});
+    if(r.error){ $("flashMsg").innerHTML = `<span class="bad">${esc(r.error)}</span>`; return; }
+    if(r.rebooting){ startFlashCountdown(flashEst(v.fs_bytes, dry), dry); }
   }catch(e){ if(!(e instanceof AuthError)) $("flashMsg").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
 }
 async function flashDisarm(){
   try{ await api("/api/flash","POST",{action:"disarm"}); }
   catch(e){ if(!(e instanceof AuthError)){ uiAlert(e.message); return; } }
   loadFlash(); loadBackup();
+}
+let flashTick=null, flashPing=null;
+function flashEst(fsBytes, dry){
+  // two reboots + boot (~150s) + write (real) or decompress-read (dry); reuse
+  // the last measured time if we have one (more accurate than the estimate).
+  const prev = parseInt(localStorage.getItem(dry?"flashDryTotal":"flashRealTotal")||"0",10)||0;
+  const rate = dry ? (90<<20) : (35<<20);          // bytes/s through gunzip|dd on eMMC
+  const est = 150 + (fsBytes||0)/rate;
+  return Math.max(Math.round(est), prev, 120);
+}
+function startFlashCountdown(total, dry){
+  clearInterval(flashTick); clearInterval(flashPing);
+  const t0 = Date.now();
+  $("flashBody").innerHTML =
+    `<div class="panel" style="margin:0"><div class="hd"><h3>${dry?"Dry-run on p7…":"Flashing p7 (rootfs)…"}</h3>`+
+    `<span class="sub">the robot reboots itself and is offline — it comes back on its own</span></div><div class="bd">`+
+    `<p class="bad" style="margin-top:0;font-weight:600">⚠ Do NOT power off the robot. Interrupting a rootfs write can brick it (USB maskrom recovery needed).</p>`+
+    `<div id="flashCd" style="font:28px/1.1 var(--mono);text-align:center;margin:8px 0">–:–</div>`+
+    `<div style="height:8px;background:var(--sunken);border-radius:5px;overflow:hidden"><div id="flashCdBar" style="height:100%;width:0;background:var(--accent);transition:width .4s"></div></div>`+
+    `<p class="note" id="flashCdNote" style="margin-top:12px">${dry?"This writes nothing to p7.":"The robot boots into the new rootfs."} This page reconnects by itself when it's back; the full result is in the flash log on p8.</p></div></div>`;
+  const tick = ()=>{
+    const el=(Date.now()-t0)/1000, rem=total-el;
+    $("flashCdBar").style.width = Math.min(98, 100*el/total).toFixed(1)+"%";
+    $("flashCd").textContent = rem>0 ? "~"+fmtMMSS(rem)+" left" : "finishing up… (don't power off)";
+  };
+  tick(); flashTick=setInterval(tick,1000);
+  // robot back = any HTTP answer (even 401) → record the real time + reload
+  flashPing=setInterval(async ()=>{
+    try{
+      await fetch("/api/session",{cache:"no-store"});
+      clearInterval(flashTick); clearInterval(flashPing);
+      const total2=Math.round((Date.now()-t0)/1000);
+      localStorage.setItem(dry?"flashDryTotal":"flashRealTotal", String(total2));
+      $("flashCdBar").style.width="100%"; $("flashCd").textContent="back!";
+      $("flashCdNote").innerHTML = `<span class="ok">✓ Robot back after ${fmtMMSS(total2)}.</span> Reloading…`;
+      setTimeout(()=>location.reload(),1200);
+    }catch(_){ /* still rebooting */ }
+  }, 4000);
 }
 
 /* ---- main MCU update (motor / power-controller firmware) ---- */

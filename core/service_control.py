@@ -59,11 +59,44 @@ def stop_master(log=print):
     _run("sleep 2")
 
 
-def stop_stack(platform, include_master=True, log=print):
+# --- safe lie-down before stopping/flashing (quadruped) --------------------
+# Mirrors the Go2 OTA CmdPreList (package.json): stop the locomotion services
+# so they don't fight the move, then run basic_demarcate to walk every joint to
+# its zero (lie-down) position WHILE motion_switcher/basic_service are still up.
+# After this the dog is on the ground, so releasing the motors can't drop it.
+CROUCH_TOOL = "/unitree/robot/tool/basic_demarcate"
+CROUCH_CMD = CROUCH_TOOL + " Start_Move_zero_position"
+CROUCH_SPORT = ("sport_mode", "advanced_sport", "ai_sport")
+CROUCH_OK = {0, 3}                 # the OTA tolerates exit 0 or 3
+
+
+def crouch(platform, log=print):
+    """Lower a Go2 to the ground (zero position) the OTA way, before the stack
+    is stopped or the robot reboots to flash. Returns True if the move ran;
+    a no-op (False) on non-Go2 platforms or when the demarcate tool is absent."""
+    if platform != "Go2":
+        log(f"  · crouch skipped (no zero-position move for {platform})")
+        return False
+    if not os.path.exists(CROUCH_TOOL):
+        log(f"  · crouch skipped ({CROUCH_TOOL} not found)")
+        return False
+    mscli = "/unitree/sbin/mscli"
+    log("Crouching to the ground (OTA zero-position move)…")
+    for name in CROUCH_SPORT:              # stop services that would fight the move
+        _stop_one(mscli, name, {0, 1, 108, 120}, log)
+    r = _run(CROUCH_CMD, timeout=60)
+    ok = r.returncode in CROUCH_OK
+    log(f"  {'✓' if ok else '!'} {CROUCH_CMD} (rc={r.returncode})"
+        + ("" if ok else f"  {r.stderr.strip()[:80]}"))
+    return ok
+
+
+def stop_stack(platform, include_master=True, log=print, crouch_first=False):
     """Stop the robot stack the OTA way. Returns True if the plan ran.
 
     include_master: also stop master_service (default True — full stop, so no
     running service can rewrite a patched file before the reboot).
+    crouch_first: on a Go2, lower it to the ground before stopping the stack.
     """
     plan = load_stop_plan(platform)
     if not plan:
@@ -75,6 +108,8 @@ def stop_stack(platform, include_master=True, log=print):
         log(f"  ! {mscli} not found — is this a real robot with /unitree mounted?")
         return False
 
+    if crouch_first:
+        crouch(platform, log=log)
     log("Stopping the robot stack (OTA CmdPreList order)…")
     for name in plan.get("stop_order", []):
         _stop_one(mscli, name, expect_ok, log)

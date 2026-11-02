@@ -673,9 +673,14 @@ class Handler(BaseHTTPRequestHandler):
             if mode == "real" and body.get("confirm") != "FLASH":
                 return self._json({"error": "type FLASH to confirm a real write to p7"}, 400)
             lines = []
+            # lower the dog to the ground first, the OTA way, so the reboot's
+            # motor release can't drop it (Go2; no-op elsewhere / if skipped)
+            if body.get("crouch", True):
+                from core import service_control
+                service_control.crouch(self.robot.platform, log=lines.append)
             try:
                 plan = flash.arm(mode=mode, image_name=body.get("image", flash.STAGE_IMG),
-                                 log=lines.append)
+                                 log=lines.append, require_rootfs=not bool(body.get("force")))
             except (ValueError, IOError) as e:
                 return self._json({"error": str(e)}, 400)
             # reboot just after this reply goes out, so the shutdown-pivot runs

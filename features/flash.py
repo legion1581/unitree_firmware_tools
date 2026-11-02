@@ -37,6 +37,7 @@ FACTORY_IMG = "linux-rootfs.img"   # factory rootfs image on p8 (removable for r
 BK_SUBDIR = "backup_partitions"    # p8 folder the backup store lives in (see bkstore.py)
 P7_BK_FILE = "p7_rootfs.img.gz"    # the p7 image the "backup" pivot writes into it
 EXT4_MAGIC = 0xEF53
+ROOTFS_LABEL = "linuxroot"      # the Go2 p7 rootfs ext4 volume label
 CHUNK = 1 << 20
 
 # Set True by bkstore while it has exclusive use of p8 (imaging it unmounted);
@@ -185,7 +186,7 @@ def stage_info():
 # ---- verification -----------------------------------------------------------
 def _ext4_super_from_stream(fobj):
     """Parse the ext4 superblock from the start of a raw fs stream.
-    Returns {magic_ok, block_size, blocks_count, fs_bytes} or None."""
+    Returns {magic_ok, block_size, blocks_count, fs_bytes, label} or None."""
     head = fobj.read(2048)
     if len(head) < 2048:
         return None
@@ -197,22 +198,25 @@ def _ext4_super_from_stream(fobj):
     log_bs = int.from_bytes(head[1024 + 0x18:1024 + 0x1c], "little")
     block_size = 1024 << log_bs
     blocks = blocks_lo | (blocks_hi << 32)
+    # s_volume_name[16] at superblock offset 0x78
+    label = head[1024 + 0x78:1024 + 0x88].split(b"\x00")[0].decode("latin1", "replace")
     return {"magic_ok": True, "block_size": block_size, "blocks_count": blocks,
-            "fs_bytes": blocks * block_size}
+            "fs_bytes": blocks * block_size, "label": label}
 
 
 def _open_image(path):
     return gzip.open(path, "rb") if path.endswith(".gz") else open(path, "rb")
 
 
-def verify(image_name=STAGE_IMG, integrity=False):
-    """Check the staged image: it is a .gz we can read, the decompressed stream
-    is an ext4 filesystem, and it fits inside p7. `integrity=True` also does a
-    full gunzip -t (slow: reads the whole file).
-    Returns {ok, ...details, error}."""
+def verify(image_name=STAGE_IMG, integrity=False, require_rootfs=True):
+    """Check the staged image: it is a gzip we can read, the decompressed stream
+    is an ext4 filesystem whose volume label is the rootfs label, and it fits
+    inside p7. `integrity=True` also does a full gunzip -t (slow). `require_rootfs`
+    False skips the label guard (explicit override). Returns {ok, ...details}."""
     tgt = target()
     out = {"ok": False, "image": image_name, "ext4": False, "fs_bytes": 0,
            "target_bytes": tgt.get("part_size", 0), "fits": False,
+           "gzip": None, "label": None, "label_ok": None, "label_mismatch": False,
            "integrity": None, "error": None}
     if not tgt["found"]:
         out["error"] = tgt["error"]
@@ -227,6 +231,12 @@ def verify(image_name=STAGE_IMG, integrity=False):
         if not os.path.isfile(path):
             out["error"] = f"{image_name} is not staged on p8"
             return out
+        out["gzip"] = path.endswith(".gz")
+        if out["gzip"]:                        # reject a mislabeled / non-gzip .gz early
+            with open(path, "rb") as rawf:
+                if rawf.read(2) != b"\x1f\x8b":
+                    out["error"] = "file is named .gz but is not gzip-compressed"
+                    return out
         try:
             with _open_image(path) as f:
                 sb = _ext4_super_from_stream(f)
@@ -240,10 +250,18 @@ def verify(image_name=STAGE_IMG, integrity=False):
             out["error"] = "decompressed image is not ext4 (bad superblock magic)"
             return out
         out.update(ext4=True, fs_bytes=sb["fs_bytes"], block_size=sb["block_size"])
+        out["label"] = sb.get("label")
         out["fits"] = sb["fs_bytes"] <= out["target_bytes"]
         if not out["fits"]:
             out["error"] = (f"filesystem is {sb['fs_bytes']} B but p7 is only "
                             f"{out['target_bytes']} B")
+            return out
+        # the deciding "is this really the rootfs" check: ext4 volume label
+        out["label_ok"] = (out["label"] == ROOTFS_LABEL)
+        if require_rootfs and not out["label_ok"]:
+            out["label_mismatch"] = True
+            out["error"] = (f"volume label is '{out['label']}', expected "
+                            f"'{ROOTFS_LABEL}' — this does not look like a Go2 rootfs")
             return out
         if integrity and path.endswith(".gz"):
             r = _run(["gunzip", "-t", path])
@@ -471,7 +489,7 @@ def disarm(log=None):
         log("disarmed: /run/initramfs removed; next reboot is normal")
 
 
-def arm(mode="dry", image_name=STAGE_IMG, log=None, debug=False):
+def arm(mode="dry", image_name=STAGE_IMG, log=None, debug=False, require_rootfs=True):
     """Build the shutdown-pivot ramfs so the NEXT reboot runs the handler.
     mode: "dry" (decompress + measure, no write), "real" (write p7 from the
     staged image), "backup" (image p7 with pigz into the p8 backup store — no
@@ -484,7 +502,7 @@ def arm(mode="dry", image_name=STAGE_IMG, log=None, debug=False):
     if not tgt["found"]:
         raise ValueError(tgt["error"])
     if mode in ("dry", "real"):                # these consume a staged image
-        v = verify(image_name)
+        v = verify(image_name, require_rootfs=require_rootfs)
         if not v["ok"]:
             raise ValueError(v["error"] or "image failed verification")
     stage_dev = _stage_dev()
