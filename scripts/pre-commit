@@ -1,0 +1,12 @@
+#!/bin/sh
+# Auto-bump the patch version (X.Y.Z -> X.Y.Z+1) on every commit and stage it.
+# Install: cp scripts/pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit
+# Skip for one commit with:  git commit --no-verify
+root="$(git rev-parse --show-toplevel)" || exit 0
+cd "$root" || exit 0
+[ -f VERSION ] || printf '2.0.0\n' > VERSION
+V="$(cat VERSION)"
+MAJ="$(printf '%s' "$V" | cut -d. -f1)"; MIN="$(printf '%s' "$V" | cut -d. -f2)"; PAT="$(printf '%s' "$V" | cut -d. -f3)"
+NEW="${MAJ:-2}.${MIN:-0}.$(( ${PAT:-0} + 1 ))"
+printf '%s\n' "$NEW" > VERSION
+git add VERSION

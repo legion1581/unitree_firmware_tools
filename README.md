@@ -41,7 +41,27 @@ If nothing matches, it refuses rather than guesses.
 - **Guardian failsafe**: keeps SSH alive, keeps root login working across OTA updates, and brings
   WiFi back if the Unitree stack fails to boot. Installed on first run, switchable in Settings.
 - **Services**: start and stop any Unitree service.
-- **Backup**: download the boot-critical flash areas (loader, u-boot, boot, identity) as a zip.
+- **Backup** (Go2): a one-time **build** images every partition except p7 into a store on
+  p8 (`backup_partitions/`), then the web UI hands each `.img.gz` out for download — so you
+  download at full LAN speed from the normal server, with no networking in the pivot. The
+  build first grows p8's filesystem to fill its partition (the factory fs is only ~half of
+  it), for room. `spl`/`uboot`/`uni`/`boot` are flagged **critical** (the minimum to recover
+  a damaged board); `spl` is the raw loader area before p1, `uni` holds the robot's identity.
+  The big ext4 images — `p8_original` and `p7_rootfs` — use `e2image` + `gzip` (used blocks
+  only); the small ones are raw `dd` + `gzip`. Partitions are only ever read. **p7 (rootfs)**
+  is the running root, so imaging it needs a reboot: the Backup tab's p7 button arms the same
+  shutdown pivot as Flash, which (with p7 unmounted) writes `p7_rootfs.img.gz` into the store;
+  it appears for download when the robot is back. On first run the build starts automatically
+  in the background. The store lives on the robot — **download the images to your computer**,
+  or grab them all with *Download all (.zip)*.
+- **Flash** (Go2, same tab): reflash the root filesystem (p7) from a compressed rootfs image.
+  The `.img.gz` is staged as a file on p8 (the factory `linux-rootfs.img` can be deleted to
+  make room; nothing else on p8 is touched), verified (ext4 + fits p7), then written **at
+  shutdown**: a busybox handler in `/run/initramfs` is armed and the robot reboots, systemd
+  pivots into it with the root unmounted, and it `zcat`s the image onto p7 before rebooting
+  into the new system — p7 is never written while mounted. **Dry-run by default** (decompresses
+  and measures, writes nothing); a real write needs a typed confirmation. A failed real write
+  means recovering the board over USB (Rockchip maskrom) from the p8 backup, so back up first.
 - **Console**: a root shell in the browser.
 - **Offline install** from a local package: `./start.sh --cli --package <dir|zip>`.
 

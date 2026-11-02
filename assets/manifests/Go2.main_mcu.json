@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "robot": "Go2",
+  "kind": "main_mcu",
+  "folder_link": "https://disk.yandex.com/d/5aSwXn-0wTPhwQ",
+  "subpath": "/firmware/main_mcu",
+  "device": "/dev/GBUNICH7",
+  "note": "Main MCU (motor/power controller) firmware for the Go2, flashed by McuBoot over /dev/GBUNICH7. Upload each main_mcu_<ver>.zip and this file (as index.json) into <Go2 folder>/firmware/main_mcu/ ; the tool lists the versions below and flashes the one you pick.",
+  "versions": [
+    {
+      "version": "1.0.0.5",
+      "label": "1.0.0.5 \u2014 Go2 1.1.1\u20131.1.12",
+      "zip": "main_mcu_1.0.0.5.zip",
+      "zip_md5": "d1d23abe5375786dd0af62145494fd39",
+      "zip_size": 70632,
+      "mcu_bin_md5": "eafa665db685d15067ed1e611602f58f",
+      "mcuboot_md5": "a1d450d2c71a071ea97196f87484c93b",
+      "firmwares": [
+        "1.1.1",
+        "1.1.2",
+        "1.1.6",
+        "1.1.12"
+      ],
+      "default": true
+    }
+  ]
+}

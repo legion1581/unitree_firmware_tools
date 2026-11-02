@@ -1,5 +1,5 @@
 """
-Package registry.
+Package registry + tool version / self-update source.
 
 Each robot model has ONE Yandex Disk PUBLIC *folder* link that holds every
 per-firmware package zip (unitree_secondary_dev_<robot>_<ver>_v1.zip). The tool
@@ -35,3 +35,22 @@ DOWNLOAD_DIR = "/unitree/tmp/fwtools_downloads"
 def folder_for(platform):
     """Yandex public folder link for a model, or '' if unset."""
     return MODEL_FOLDERS.get(platform, "")
+
+
+# ---- tool version + self-update ---------------------------------------------
+import os as _os
+
+_REPO = _os.path.dirname(_os.path.abspath(__file__))
+
+# self-update pulls from this public GitHub repo/branch (see features/updater.py)
+GITHUB_SLUG = "legion1581/go2_firmware_tools"
+GITHUB_BRANCH = "v2"
+
+
+def version():
+    """The tool version, from the repo-root VERSION file (bumped per commit)."""
+    try:
+        with open(_os.path.join(_REPO, "VERSION")) as f:
+            return f.read().strip() or "0.0.0"
+    except OSError:
+        return "0.0.0"

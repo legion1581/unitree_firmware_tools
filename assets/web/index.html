@@ -88,6 +88,9 @@
   dl.kv dt{color:var(--muted)}
   dl.kv dd{font-family:var(--mono);font-size:13px;word-break:break-word;white-space:pre-line}
   dl.kv dt:nth-last-child(2),dl.kv dd:last-child{border-bottom:none}
+  dl.kv dd .usg{display:block;margin-bottom:5px}
+  .usebar{height:7px;max-width:260px;background:var(--sunken);border-radius:4px;overflow:hidden}
+  .usebar>i{display:block;height:100%;background:#e8820c;border-radius:4px;transition:width .3s}
 
   /* ---------- controls ---------- */
   button{font:500 13px var(--sans);padding:6px 12px;border:1px solid var(--line-strong);border-radius:6px;
@@ -154,16 +157,33 @@
 
   /* ---------- backup ---------- */
   .parts{list-style:none;margin:0;padding:0}
-  .parts li{display:grid;grid-template-columns:22px 70px 1fr auto auto;gap:4px 14px;align-items:center;padding:11px 16px;border-bottom:1px solid var(--line)}
+  .parts li{display:grid;grid-template-columns:110px 1fr auto 104px 34px;gap:14px;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line)}
   .parts li:last-child{border-bottom:none}
-  .parts .nm{font:500 13px var(--mono)}
-  .parts .ds{color:var(--muted);font-size:13px}
+  .parts .nm{font:500 13px var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .parts .ds{color:var(--muted);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .parts .dv{font:12.5px var(--mono);color:var(--muted);text-align:right;white-space:nowrap}
   .parts .miss{color:var(--bad);font-size:13px}
-  .parts a{font-size:13px;color:var(--accent);text-decoration:none;white-space:nowrap}
-  .parts a:hover{text-decoration:underline}
+  .dlbtn{display:inline-block;text-align:center;padding:5px 0;width:100%;border-radius:6px;background:var(--accent);color:#fff;font-size:12.5px;text-decoration:none;cursor:pointer}
+  .dlbtn:hover{opacity:.9}
+  .dlbtn.off{background:var(--sunken);color:var(--muted);cursor:default;font-style:italic}
+  .rbtn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:28px;border-radius:6px;border:1px solid var(--line);background:var(--sunken);color:var(--muted);font-size:15px;line-height:1;cursor:pointer;padding:0}
+  .rbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .rbtn:disabled{opacity:.4;cursor:default}
+  .rbtn:disabled:hover{border-color:var(--line);color:var(--muted)}
+  details.help{margin:10px 2px}
+  details.help>summary{cursor:pointer;color:var(--muted);font-size:13px;list-style:none;user-select:none}
+  details.help>summary::-webkit-details-marker{display:none}
+  details.help>summary::before{content:"\25B8  ";color:var(--accent)}
+  details.help[open]>summary::before{content:"\25BE  "}
+  details.help .note{margin-top:8px}
+  .mtbl{border-collapse:collapse;font:12px var(--mono);min-width:100%}
+  .mtbl th,.mtbl td{padding:4px 12px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+  .mtbl th{color:var(--muted);font-weight:500}
   .parts li.off .nm{color:var(--muted)}
-  @media (max-width:760px){ .parts li{grid-template-columns:22px 60px 1fr auto} .parts .dv{display:none} }
+  .crit-tag{display:inline-block;font:600 10px var(--sans);letter-spacing:.04em;text-transform:uppercase;
+    color:var(--accent);background:var(--accent-soft);border-radius:4px;padding:1px 6px;vertical-align:middle}
+  .parts .fs{color:var(--warn);font-size:11px}
+  @media (max-width:760px){ .parts li{grid-template-columns:22px 70px 1fr auto} .parts .dv{display:none} }
   .ft{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid var(--line);flex-wrap:wrap}
 
   /* ---------- console ---------- */
@@ -232,7 +252,7 @@
 <div id="app" style="display:none">
 <header>
   <div class="bar">
-    <div class="brand"><span class="mark"></span><span class="bt">Unitree Firmware Tools</span></div>
+    <div class="brand"><span class="mark"></span><span class="bt">Unitree Firmware Tools</span><small id="c-ver" title="tool version"></small></div>
     <div class="readout" title="robot · firmware · secondary development">
       <span><svg class="i"><use href="#i-robot"/></svg><b id="c-model" style="font-weight:500">…</b></span>
       <span class="hide-sm"><svg class="i"><use href="#i-chip"/></svg><span id="c-fw" style="padding:0;border:0;background:none">…</span></span>
@@ -246,7 +266,7 @@
     <a data-tab="secdev">Secondary development</a>
     <a data-tab="services">Services</a>
     <a data-tab="network">Network</a>
-    <a data-tab="backup">Backup</a>
+    <a data-tab="backup">Backup &amp; Flash</a>
     <a data-tab="settings">Settings</a>
     <a data-tab="console">Console</a>
   </nav>
@@ -297,15 +317,17 @@
     <pre class="log" id="log"></pre>
   </div>
 
+  <div class="panel">
+    <div class="hd"><h3>Checks</h3><span class="sub">what the robot reports</span></div>
+    <ul class="checks" id="checks"></ul>
+  </div>
+
   <div class="panel" id="airPanel" style="display:none">
     <div class="hd"><h3>Pro modules (Air)</h3><span class="sub" id="airSub"></span></div>
     <div class="toggle">
       <button class="primary" id="airBtn" onclick="askAirModules()">Install Pro modules</button>
       <div>
         <div class="state" id="airLabel">…</div>
-        <div class="note">Adds the modules a Go2 Air ships without — ai_sport, advanced_sport,
-          unitree_lidar_slam, chat_go, utrack, 4gcm (newest build of each). Enable secondary
-          development first. Reversible; originals are backed up.</div>
       </div>
     </div>
     <ul id="airList" class="checks"></ul>
@@ -316,11 +338,6 @@
         <button onclick="hideAirConfirm()">Cancel</button>
       </div>
     </div>
-  </div>
-
-  <div class="panel">
-    <div class="hd"><h3>Checks</h3><span class="sub">what the robot reports</span></div>
-    <ul class="checks" id="checks"></ul>
   </div>
 </section>
 
@@ -374,16 +391,30 @@
 
 <!-- BACKUP -->
 <section id="tab-backup">
-  <div class="panel">
-    <div class="hd"><h3>Flash partitions</h3><span class="sub">read-only dump, downloaded to this browser</span></div>
-    <ul class="parts" id="parts"><li><span></span><span class="note">loading…</span></li></ul>
-    <div class="ft">
-      <button class="primary" id="zipBtn" onclick="downloadZip()">Download selected as .zip</button>
-      <span class="note" id="zipNote"></span>
-    </div>
+  <div class="panel" id="bkPanel">
+    <div class="hd"><h3>Partition backups</h3><span class="sub">images kept on p8 · download them to your computer</span></div>
+    <div class="bd" id="bkBody"><p class="note">loading…</p></div>
   </div>
-  <p class="note">The partitions are only read, never written. <span class="mono">uni</span> holds this robot's identity:
-    keep the zip somewhere safe, it is what you need to recover a board whose flash was damaged.</p>
+  <details class="help">
+    <summary>How partition backups work</summary>
+    <p class="note" style="margin-top:8px">The images are built once on the robot's <span class="mono">p8</span> (its filesystem is first
+    grown to fill the partition for room), then downloaded from here — partitions are only ever read, never written.
+    <span class="mono">uni</span> holds this robot's identity, so keep it safe. The big ext4 images
+    (<span class="mono">p8_original</span>, <span class="mono">p7_rootfs</span>) are <span class="mono">e2image</span>+gzip
+    (used blocks only). <b>p7 (rootfs) needs a reboot</b> to image, because it is the running root.</p>
+  </details>
+
+  <div class="panel" id="flashPanel" style="margin-top:18px">
+    <div class="hd"><h3>Flash rootfs (p7)</h3><span class="sub">write a rootfs image to the robot</span></div>
+    <div class="bd" id="flashBody"><p class="note">loading…</p></div>
+  </div>
+  <div id="flashHelp"></div>
+
+  <div class="panel" id="mcuPanel" style="margin-top:18px;display:none">
+    <div class="hd"><h3>Main MCU update</h3><span class="sub">flash the motor / power controller firmware</span></div>
+    <div class="bd" id="mcuBody"><p class="note">loading…</p></div>
+  </div>
+  <div id="mcuHelp"></div>
 </section>
 
 <!-- SETTINGS -->
@@ -430,6 +461,22 @@
     </div>
     <pre class="log" id="setout"></pre>
   </div>
+
+  <div class="panel">
+    <div class="hd"><h3>Updates</h3><span class="sub">pull the latest tool from GitHub</span></div>
+    <div class="bd">
+      <div class="row" style="gap:14px;align-items:baseline">
+        <div>installed <b class="mono" id="upd-cur">…</b></div>
+        <div>latest <b class="mono" id="upd-latest">—</b></div>
+      </div>
+      <div class="row" style="margin-top:10px;gap:10px">
+        <button id="upd-check" onclick="updateCheck()">Check for updates</button>
+        <button class="primary" id="upd-apply" onclick="updateApply(false)" disabled>Update &amp; restart</button>
+        <span class="note" id="upd-note"></span>
+      </div>
+      <pre class="log" id="upd-out" style="display:none"></pre>
+    </div>
+  </div>
 </section>
 
 <!-- CONSOLE -->
@@ -465,6 +512,17 @@
     </ol>
     <p class="note">A soft reboot is not enough: it does not reset the MCU and the motors.</p>
     <div class="row" style="margin-top:14px"><button class="primary" onclick="$('pcModal').classList.remove('on')">OK</button></div>
+  </div>
+</div>
+
+<div class="modal" id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+  <div class="box">
+    <h3 id="dlgTitle"></h3>
+    <div id="dlgMsg" style="white-space:pre-line;color:var(--muted);font-size:14px;line-height:1.5"></div>
+    <div class="row" style="margin-top:16px;justify-content:flex-end;gap:8px">
+      <button id="dlgCancel" onclick="dlgResolve(false)">Cancel</button>
+      <button class="primary" id="dlgOk" onclick="dlgResolve(true)">OK</button>
+    </div>
   </div>
 </div>
 
@@ -541,7 +599,7 @@ function showTab(t){
   if(t==="services"){ loadServices(); svcTimer = setInterval(loadServices, 5000); }
   if(t==="network") loadNetwork();
   if(t==="console") setTimeout(()=>$("conIn").focus(), 30);
-  if(t==="backup") loadParts();
+  if(t==="backup"){ loadBackup(); loadFlash(); loadMcu(); }
 }
 document.querySelectorAll("nav a").forEach(a=>a.onclick=()=>showTab(a.dataset.tab));
 
@@ -562,6 +620,7 @@ function secureBootText(sb, magic){
 }
 function renderStatus(s){
   S = s;
+  if(s.version){ $("c-ver").textContent = "v"+s.version; }
   $("c-model").textContent = s.platform + (s.edition && s.edition!=="?" ? " "+s.edition : "");
   $("c-fw").textContent = s.firmware || "?";
   $("c-fw").className = (s.secdev && s.secdev.unsupported) ? "bad" : "";
@@ -580,19 +639,28 @@ function renderStatus(s){
     s.identity_error ? ["Identity", s.identity_error, "bad"] : ["Identity from", "/dev/uni_sec"],
   ]);
   const y = s.system||{};
-  $("kv-system").innerHTML = kv([
-    ["Hostname", y.hostname], ["Uptime", fmtUptime(y.uptime)], ["Load", (y.load||[]).join("  ")],
-    ["Memory", y.mem_total ? fmtBytes(y.mem_total-y.mem_avail)+" of "+fmtBytes(y.mem_total) : ""],
-    ["/unitree free", y.disk ? fmtBytes(y.disk.free)+" of "+fmtBytes(y.disk.total) : ""],
-    ["Kernel", y.kernel], ["Addresses", (y.ips||[]).join("\n")],
-  ]);
+  const dtdd = (k,v)=>`<dt>${k}</dt><dd>${v}</dd>`;
+  const usg = (used,total)=>{
+    const pct = total ? Math.min(100, 100*used/total) : 0;
+    return `<span class="usg">${fmtBytes(used)} used of ${fmtBytes(total)}</span>`+
+           `<div class="usebar"><i style="width:${pct.toFixed(1)}%"></i></div>`;
+  };
+  let sh = dtdd("Hostname", esc(y.hostname||"-")) + dtdd("Uptime", esc(fmtUptime(y.uptime)))
+         + dtdd("Load", esc((y.load||[]).join("  ")))
+         + dtdd("SoC temp", y.soc_temp!=null ? `<span class="${y.soc_temp>=85?'bad':y.soc_temp>=75?'warn':''}">${y.soc_temp.toFixed(1)} °C</span>` : "-")
+         + dtdd("RAM", y.mem_total ? usg(y.mem_total-y.mem_avail, y.mem_total) : "-")
+         + dtdd("rootfs (p7)", y.rootfs ? usg(y.rootfs.used, y.rootfs.total) : "-");
+  if(y.userdata) sh += dtdd("userdata (p8)", usg(y.userdata.used, y.userdata.total));
+  if(s.backup_building) sh += dtdd("Backups", `<span class="warn">building partition backups… <a href="#backup" onclick="showTab('backup')">see Backup &amp; Flash</a></span>`);
+  sh += dtdd("Kernel", esc(y.kernel||"-")) + dtdd("Addresses", esc((y.ips||[]).join("\n")));
+  $("kv-system").innerHTML = sh;
   renderSecdev(sd);
   renderSettings(s);
   if(s.job && !polling) poll(s.job);
 }
 async function refresh(){
   try{ renderStatus(await api("/api/status")); err(""); }
-  catch(e){ if(!(e instanceof AuthError)) err(e.message); }
+  catch(e){ if(!(e instanceof AuthError) && !/failed to fetch|networkerror|load failed/i.test(e.message||"")) err(e.message); }
 }
 
 /* ---- secondary development ---- */
@@ -705,7 +773,40 @@ function showPowerCycle(what){
   $("pcModal").classList.add("on");
   $("pcModal").querySelector("button").focus();
 }
-document.addEventListener("keydown", e=>{ if(e.key==="Escape") $("pcModal").classList.remove("on"); });
+/* ---- in-page dialogs (replace native confirm/alert) ---- */
+let _dlgResolve = null;
+function dlgResolve(v){ const r=_dlgResolve; _dlgResolve=null; $("dlg").classList.remove("on"); if(r) r(v); }
+function uiConfirm(msg, opts){
+  opts = opts || {};
+  return new Promise(res=>{
+    if(_dlgResolve) dlgResolve(false);           // close any open one first
+    _dlgResolve = res;
+    $("dlgTitle").textContent = opts.title || "Please confirm";
+    $("dlgMsg").textContent = msg;
+    $("dlgCancel").style.display = "";
+    $("dlgOk").textContent = opts.ok || "OK";
+    $("dlgOk").className = opts.danger ? "danger" : "primary";
+    $("dlg").classList.add("on");
+    setTimeout(()=>$("dlgOk").focus(), 30);
+  });
+}
+function uiAlert(msg, title){
+  return new Promise(res=>{
+    if(_dlgResolve) dlgResolve(false);
+    _dlgResolve = res;
+    $("dlgTitle").textContent = title || "Notice";
+    $("dlgMsg").textContent = msg;
+    $("dlgCancel").style.display = "none";
+    $("dlgOk").textContent = "OK";
+    $("dlgOk").className = "primary";
+    $("dlg").classList.add("on");
+    setTimeout(()=>$("dlgOk").focus(), 30);
+  });
+}
+document.addEventListener("keydown", e=>{
+  if(e.key==="Escape"){ $("pcModal").classList.remove("on"); if(_dlgResolve) dlgResolve(false); }
+  else if(e.key==="Enter" && _dlgResolve && $("dlg").classList.contains("on")){ dlgResolve(true); }
+});
 let polling = null, busy = false;
 function setBusy(on){
   busy = on; $("sw").disabled = on || !!(SD&&SD.native);
@@ -748,37 +849,271 @@ async function loadServices(){
 }
 async function svcToggle(name, state){
   const action = state==="running" ? "stop" : "start";
-  if(!confirm(`${action[0].toUpperCase()+action.slice(1)} ${name}?`)) return;
+  if(!(await uiConfirm(`${action[0].toUpperCase()+action.slice(1)} ${name}?`))) return;
   const out = $("svcout"); out.style.display="block"; out.textContent = `mscli ${action}service ${name} …`;
   try{ const r = await api("/api/services","POST",{name, action}); out.textContent = (r.ok?"ok":"did not reach the expected state")+"\n"+(r.out||""); }
   catch(e){ out.textContent = "error: "+e.message; }
   setTimeout(loadServices, 800);
 }
 
-/* ---- backup ---- */
-async function loadParts(){
+/* ---- backup store (images kept on p8, built once, served from here) ---- */
+let bkPoll = null, BK = null;
+function bkRow(f, p7busy, built){
+  const nm = f.file.replace(/\.img\.gz$/,"");
+  const title = f.md5 ? ` title="md5 ${esc(f.md5)}"` : "";
+  const isP7 = f.area==="rootfs";
+  let btn;
+  if(f.present){
+    btn = `<a class="dlbtn" href="/api/backup/file/${encodeURIComponent(f.file)}" download>Download</a>`;
+  } else {
+    const lbl = isP7 ? (p7busy ? "dumping…" : "not imaged") : "baking…";
+    btn = `<span class="dlbtn off">${lbl}</span>`;
+  }
+  // small per-partition re-image button
+  let rb;
+  if(isP7){
+    rb = `<button class="rbtn" title="Re-image p7 (reboots the robot once, ~3 min)" `+
+         `${(busy||p7busy)?"disabled":""} onclick="backupP7()">↻</button>`;
+  } else {
+    const dis = busy || !built;
+    const tip = built ? `Re-image ${f.area} into the backup store` : "Build the full backup set first";
+    rb = `<button class="rbtn" title="${esc(tip)}" ${dis?"disabled":""} onclick="reimageOne('${esc(f.area)}')">↻</button>`;
+  }
+  const loc = f.dev ? `<span class="mono" style="color:var(--fg)">${esc(f.dev)}</span> · ` : "";
+  return `<li${title}><span class="nm">${esc(nm)}</span>`+
+    `<span class="ds">${loc}${esc(f.desc||"")}</span>`+
+    `<span class="dv">${f.present ? fmtBytes(f.bytes) : ""}</span>`+
+    btn+rb+`</li>`;
+}
+async function loadBackup(){
   let d;
-  try{ d = await api("/api/backup"); }catch(e){ if(!(e instanceof AuthError)) $("parts").innerHTML = `<li><span></span><span class="bad">${esc(e.message)}</span></li>`; return; }
-  $("parts").innerHTML = d.areas.map(a => a.found
-    ? `<li><input type="checkbox" class="pchk" value="${esc(a.name)}" checked onchange="zipState()"><span class="nm">${esc(a.name)}</span>`+
-      `<span class="ds">${esc(a.desc)}</span><span class="dv">${esc(a.dev)} · ${fmtBytes(a.size)}</span>`+
-      `<a href="/api/backup/img/${encodeURIComponent(a.name)}" download>.img</a></li>`
-    : `<li class="off"><input type="checkbox" disabled><span class="nm">${esc(a.name)}</span>`+
-      `<span class="miss">${esc(a.error)}</span><span></span><span></span></li>`).join("");
-  zipState();
+  try{ d = await api("/api/backup"); }catch(e){ if(!(e instanceof AuthError)) $("bkBody").innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+  BK = d;
+  if(d.error){ $("bkBody").innerHTML = `<p class="note">${esc(d.error)}</p>`; return; }
+  // a build is running -> show its live log and keep polling
+  if(d.job || d.busy){
+    if(d.job) bkWatch(d.job);
+    else { $("bkBody").innerHTML = `<p class="warn">A backup build is in progress…</p>`; clearTimeout(bkPoll); bkPoll = setTimeout(loadBackup, 1500); }
+    return;
+  }
+  const p7busy = !!(d.p7 && d.p7.armed && d.p7.armed.armed && d.p7.armed.mode==="backup");
+  const rows = (d.files||[]).map(f=>bkRow(f,false,d.built)).join("") + (d.p7 ? bkRow(d.p7, p7busy, d.built) : "");
+  let h = "";
+  if(!d.built){
+    h += `<p class="warn" style="margin-top:0"><b>No backups yet.</b> Build a set of partition images on the robot — takes a few minutes.</p>`;
+  } else {
+    h += `<p class="ok" style="margin-top:0">✓ Backed up ${esc((d.created||"").split(" ")[0])}. <b>Download them to your computer</b> — they're only on the robot otherwise.</p>`;
+  }
+  h += `<ul class="parts" id="bkList">${rows}</ul>`;
+  h += `<div class="ft" style="gap:10px">`+
+       `<button class="primary" id="bkBuildBtn" onclick="bkBuild()">${d.built?"Rebuild all":"Build backups now"}</button>`+
+       (d.built ? `<button onclick="location.href='/api/backup/all.zip'">Download all (.zip)</button>` : "")+
+       `</div>`;
+  // p7 action (reboot-gated)
+  const p7 = d.p7 || {};
+  if(p7.armed && p7.armed.armed && p7.armed.mode==="backup"){
+    h += `<p class="warn" style="margin-top:14px"><b>Armed:</b> the next reboot will image p7 into the store. `+
+         `<button class="danger" onclick="flashDisarm()">Disarm</button></p>`;
+  } else {
+    h += `<p class="note" style="margin-top:14px">Each partition has a ↻ re-image button. `+
+         `p7 (rootfs) is the running root, so its ↻ reboots the robot once (~3 min); when it's back, the image appears here to download.</p>`;
+  }
+  h += `<div class="note" id="bkP7Msg" style="margin-top:8px"></div>`;
+  $("bkBody").innerHTML = h;
 }
-function zipState(){
-  const sel = [...document.querySelectorAll(".pchk:checked")];
-  $("zipBtn").disabled = !sel.length;
-  $("zipNote").textContent = sel.length ? sel.map(el=>el.value).join(", ") : "nothing selected";
+function bkWatch(id){
+  clearTimeout(bkPoll);
+  const render = async ()=>{
+    let j;
+    try{ j = await api("/api/job/"+id); }catch(e){ return; }
+    const log = `<pre style="white-space:pre-wrap;background:var(--sunken);padding:10px;border-radius:6px;font:12px var(--mono);max-height:320px;overflow:auto">${esc(j.name+"\n\n"+j.lines.join("\n")+(j.done?(j.ok?"\n[done]":"\n[failed]"):"\n…"))}</pre>`;
+    const one = /^Re-image/.test(j.name||"");
+    const hdr = one ? `<b>${esc(j.name)}…</b> re-capturing one image to p8.`
+                    : `<b>Building partition backups…</b> the robot is imaging to p8; this takes a few minutes.`;
+    $("bkBody").innerHTML = `<p class="warn" style="margin-top:0">${hdr}</p>`+log;
+    if(j.done){ clearTimeout(bkPoll); setTimeout(loadBackup, 600); }
+    else bkPoll = setTimeout(render, 1000);
+  };
+  render();
 }
-function downloadZip(){
-  const names = [...document.querySelectorAll(".pchk:checked")].map(el=>el.value);
-  if(!names.length) return;
-  const a = document.createElement("a");
-  a.href = "/api/backup/zip?parts=" + encodeURIComponent(names.join(","));
-  a.download = ""; document.body.appendChild(a); a.click(); a.remove();
-  $("zipNote").textContent = "Reading the partitions… the download starts in your browser.";
+async function bkBuild(){
+  const built = $("bkBuildBtn") && $("bkBuildBtn").textContent.startsWith("Rebuild");
+  if(built && !(await uiConfirm("Rebuild all partition backups on p8? This overwrites the existing images.", {danger:true, ok:"Rebuild"}))) return;
+  try{
+    const r = await api("/api/backup","POST",{action:"build"});
+    if(r.job) bkWatch(r.job);
+    else if(r.error) uiAlert(r.error);
+  }catch(e){ if(!(e instanceof AuthError)) uiAlert(e.message); }
+}
+async function reimageOne(area){
+  if(busy) return;
+  const nice = area==="userdata" ? "p8 (userdata)" : area;
+  if(!(await uiConfirm(`Re-image ${nice}? This re-captures just that one image into the on-robot backup store on p8 — the partition itself is only read. Takes a moment; the others are left as they are.`, {ok:"Re-image", title:"Re-image "+nice}))) return;
+  try{
+    const r = await api("/api/backup","POST",{action:"backup_one", area});
+    if(r.job) bkWatch(r.job);
+    else if(r.error) uiAlert(r.error);
+  }catch(e){ if(!(e instanceof AuthError)) uiAlert(e.message); }
+}
+function fmtMMSS(s){ s=Math.max(0,Math.round(s)); return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+let p7Tick=null, p7Ping=null;
+async function backupP7(){
+  const est = (BK && BK.p7 && BK.p7.est_secs) || 240;
+  if(!(await uiConfirm("Back up p7 (rootfs)?\n\nThe robot reboots once and is offline for about "+fmtMMSS(est)+" while it images itself. Don't power it off — it comes back on its own and the image appears here to download.", {ok:"Back up", title:"Back up p7"}))) return;
+  try{
+    const r = await api("/api/backup","POST",{action:"backup_p7",confirm:true});
+    if(r.error){ uiAlert(r.error); return; }
+    if(r.rebooting){
+      const prev = parseInt(localStorage.getItem("p7dumpTotal")||"0",10)||0;
+      startP7Countdown(Math.max(est, prev), (r.plan&&r.plan.dest)||"p8 store");
+    }
+  }catch(e){ if(!(e instanceof AuthError)) uiAlert(e.message); }
+}
+function startP7Countdown(total, dest){
+  clearInterval(p7Tick); clearInterval(p7Ping);
+  const t0 = Date.now();
+  $("bkBody").innerHTML =
+    `<div class="panel" style="margin:0"><div class="hd"><h3>Backing up p7…</h3>`+
+    `<span class="sub">the robot is offline while it backs up — don't power it off</span></div><div class="bd">`+
+    `<div id="p7cd" style="font:28px/1.1 var(--mono);text-align:center;margin:8px 0">–:–</div>`+
+    `<div style="height:8px;background:var(--sunken);border-radius:5px;overflow:hidden"><div id="p7bar" style="height:100%;width:0;background:var(--accent);transition:width .4s"></div></div>`+
+    `<p class="note" id="p7cdnote" style="margin-top:12px">The robot reboots and has no network until it's done — this page reconnects by itself.</p></div></div>`;
+  const tick = ()=>{
+    const el = (Date.now()-t0)/1000, rem = total-el;
+    $("p7bar").style.width = Math.min(98, 100*el/total).toFixed(1)+"%";
+    $("p7cd").textContent = rem>0 ? "~"+fmtMMSS(rem)+" left" : "finishing up…";
+  };
+  tick(); p7Tick = setInterval(tick, 1000);
+  // detect the robot coming back: any HTTP answer (even 401) means it's up → reload
+  p7Ping = setInterval(async ()=>{
+    try{
+      await fetch("/api/session", {cache:"no-store"});
+      clearInterval(p7Tick); clearInterval(p7Ping);
+      const total2 = Math.round((Date.now()-t0)/1000);
+      localStorage.setItem("p7dumpTotal", String(total2));
+      $("p7bar").style.width = "100%"; $("p7cd").textContent = "back!";
+      $("p7cdnote").innerHTML = `<span class="ok">✓ Robot back after ${fmtMMSS(total2)}.</span> Reloading…`;
+      setTimeout(()=>location.reload(), 1000);
+    }catch(_){ /* still down */ }
+  }, 4000);
+}
+
+/* ---- flash rootfs (browse a local .img.gz -> flash p7) ---- */
+let FLASH = null;
+async function loadFlash(){
+  let d;
+  try{ d = await api("/api/flash"); }catch(e){ if(!(e instanceof AuthError)) $("flashBody").innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+  FLASH = d;
+  const t = d.target, armed = d.armed;
+  if(!t.found){ $("flashBody").innerHTML = `<p class="note">No <span class="mono">rootfs</span> partition — flashing is Go2-only.</p>`; $("flashHelp").textContent=""; return; }
+  let h = "";
+  if(armed.armed){
+    h += `<p class="${armed.mode==="real"?"bad":"warn"}" style="margin-top:0"><b>Armed:</b> the next reboot will <b>${esc(armed.mode)}</b>-flash ${esc(t.dev)}. `+
+         `<button class="danger" onclick="flashDisarm()">Disarm</button></p>`;
+  }
+  h += `<div class="row" style="gap:10px;align-items:center;flex-wrap:wrap">`+
+       `<input type="file" id="flashFile" accept=".gz,.img">`+
+       `<span class="note" id="flashMsg"></span>`+
+       `<button class="primary" style="margin-left:auto" onclick="flashGo(false)">Flash</button></div>`+
+       `<div style="height:6px;background:var(--sunken);border-radius:4px;margin:10px 0;display:none" id="flashBar"><div style="height:100%;width:0;background:var(--accent);border-radius:4px;transition:width .3s" id="flashBarIn"></div></div>`;
+  $("flashBody").innerHTML = h;
+  $("flashHelp").innerHTML = `<details class="help"><summary>How flashing works</summary><p class="note" style="margin-top:8px">Pick a rootfs <span class="mono">.img.gz</span> from your computer and flash it to <span class="mono">${esc(t.dev)}</span>. It's uploaded to the robot, then written during a reboot, and the robot boots into it (~3 min). <b>Back up first</b> — a failed write needs USB (maskrom) recovery.</p></details>`;
+}
+function setFlashBar(p){ const b=$("flashBar"); if(b){ b.style.display="block"; $("flashBarIn").style.width=p+"%"; } }
+function flashUploadFile(f){
+  return new Promise(res=>{
+    const xhr=new XMLHttpRequest(); xhr.open("POST","/api/flash/upload");
+    xhr.setRequestHeader("Content-Type","application/octet-stream");
+    xhr.upload.onprogress=e=>{ if(e.lengthComputable){ setFlashBar((100*e.loaded/e.total).toFixed(1)); $("flashMsg").textContent="uploading "+fmtBytes(e.loaded)+" / "+fmtBytes(e.total); } };
+    xhr.onload=()=>{ try{ res(JSON.parse(xhr.responseText)); }catch(_){ res({ok:false,error:"upload failed ("+xhr.status+")"}); } };
+    xhr.onerror=()=>res({ok:false,error:"upload error"});
+    xhr.send(f);
+  });
+}
+async function flashGo(dry){
+  const f = $("flashFile").files[0];
+  if(!f){ $("flashMsg").innerHTML = `<span class="bad">choose an .img.gz first</span>`; return; }
+  if(!dry && !(await uiConfirm(`Flash "${f.name}" to p7 (rootfs)?\n\nThis overwrites the running system and reboots into the new image. Make sure you have a backup — a failed write needs USB recovery.`, {danger:true, ok:"Flash", title:"Flash p7"}))) return;
+  try{
+    setFlashBar(0);
+    const up = await flashUploadFile(f);
+    if(!up.ok){ $("flashMsg").innerHTML = `<span class="bad">${esc(up.error||"upload failed")}</span>`; return; }
+    $("flashMsg").textContent = "uploaded "+fmtBytes(up.bytes)+" — verifying…";
+    const v = await api("/api/flash","POST",{action:"verify"});
+    if(!v.ok){ $("flashMsg").innerHTML = `<span class="bad">${esc(v.error||"image failed verification")}</span>`; return; }
+    $("flashMsg").innerHTML = `<span class="ok">image OK (ext4 ${fmtBytes(v.fs_bytes)})</span> — ${dry?"starting dry-run…":"flashing…"}`;
+    const r = await api("/api/flash","POST",{action:"flash",mode:dry?"dry":"real",confirm:dry?true:"FLASH"});
+    if(r.error){ $("flashMsg").innerHTML = `<span class="bad">${esc(r.error)}</span>`; return; }
+    if(r.rebooting){
+      $("flashBody").innerHTML = `<p class="${dry?'warn':'bad'}"><b>Rebooting to ${dry?'dry-run':'flash'} p7.</b> The UI and SSH drop now; reconnect in ~2–3 minutes.${dry?' This writes nothing to p7.':' The robot boots into the new rootfs.'} The result is in the flash log on p8.</p>`;
+    }
+  }catch(e){ if(!(e instanceof AuthError)) $("flashMsg").innerHTML = `<span class="bad">${esc(e.message)}</span>`; }
+}
+async function flashDisarm(){
+  try{ await api("/api/flash","POST",{action:"disarm"}); }
+  catch(e){ if(!(e instanceof AuthError)){ uiAlert(e.message); return; } }
+  loadFlash(); loadBackup();
+}
+
+/* ---- main MCU update (motor / power-controller firmware) ---- */
+async function loadMcu(refresh){
+  let d;
+  try{ d = await api("/api/mcu" + (refresh?"?refresh=1":"")); }catch(e){ if(!(e instanceof AuthError)) $("mcuBody").innerHTML = `<p class="bad">${esc(e.message)}</p>`; return; }
+  if(!d.is_go2){ $("mcuPanel").style.display="none"; $("mcuHelp").textContent=""; return; }
+  $("mcuPanel").style.display="";
+  const vers = d.versions||[], dev = esc(d.device||"");
+  if(!vers.length){
+    $("mcuBody").innerHTML = `<p class="warn" style="margin-top:0">No MCU firmware in the catalog yet — upload <span class="mono">main_mcu_&lt;ver&gt;.zip</span> + <span class="mono">index.json</span> to the Yandex folder.</p>`;
+    $("mcuHelp").innerHTML=""; return;
+  }
+  const noDev = !d.device_present, noFolder = !d.folder_ok;
+  const inst = d.installed||"";
+  const opts = vers.map(v=>{
+    const isInst = inst && v.version===inst;
+    const sel = v.default || isInst ? " selected" : "";
+    return `<option value="${esc(v.version)}"${sel}>${esc(v.label||v.version)}${isInst?" — installed":""}</option>`;
+  }).join("");
+  let h = "";
+  if(inst) h += `<p class="note" style="margin-top:0">Installed (per package manifest): <b class="mono">${esc(inst)}</b> — the MCU has no version query of its own, so this is the OTA-tracked module version.</p>`;
+  h += `<div class="row" style="gap:10px;align-items:center;flex-wrap:wrap">`+
+    `<label class="note" for="mcuVer">Firmware version</label>`+
+    `<select id="mcuVer" style="min-width:230px">${opts}</select>`+
+    `<a href="#" class="note" title="re-list the versions in the Yandex folder" onclick="loadMcu(true);return false">↻ refresh</a>`+
+    `<span class="note" id="mcuMsg"></span>`+
+    `<button class="primary" style="margin-left:auto" id="mcuBtn" ${(noDev||noFolder||busy)?"disabled":""} onclick="mcuGo()">Update MCU</button></div>`;
+  if(noDev) h += `<p class="bad" style="margin-top:10px">MCU serial device <span class="mono">${dev}</span> is not present — flashing isn't possible from here.</p>`;
+  if(noFolder) h += `<p class="warn" style="margin-top:10px">No Yandex folder link set yet — add it to <span class="mono">assets/manifests/Go2.main_mcu.json</span> so the chosen version can download.</p>`;
+  else if(d.source!=="yandex") h += `<p class="note" style="margin-top:10px">Catalog not found in the folder yet — upload <span class="mono">index.json</span> + <span class="mono">main_mcu_&lt;ver&gt;.zip</span> to the Go2 Yandex folder under <span class="mono">firmware/main_mcu/</span>. (Showing the built-in list meanwhile.)</p>`;
+  $("mcuBody").innerHTML = h;
+  $("mcuHelp").innerHTML = `<details class="help"><summary>How the MCU update works</summary><p class="note" style="margin-top:8px">`+
+    `The main MCU is the motor / power controller on the robot's internal bus (<span class="mono">${dev}</span>). `+
+    `The tool downloads the chosen firmware, stops the motion services, runs Unitree's <span class="mono">McuBoot start_Mcu_Upgrade</span>, then cleans up. `+
+    `<b>Keep the robot still and powered</b> during the flash, and <b>power-cycle afterwards</b> to boot the new firmware. (catalog source: ${esc(d.source||"local")})</p></details>`;
+}
+async function mcuGo(){
+  if(busy) return;
+  const sel = $("mcuVer"); const version = sel ? sel.value : "";
+  if(!version) return;
+  const label = sel.options[sel.selectedIndex].text;
+  if(!(await uiConfirm(`Flash the main MCU to ${label}?\n\nThis writes firmware to the motor/power controller over the robot's internal bus. The motion services stop during the flash — keep the robot still and powered, and power-cycle it afterwards. A failed MCU flash can need recovery.`, {danger:true, ok:"Flash MCU", title:"Main MCU update"}))) return;
+  try{
+    const r = await api("/api/mcu","POST",{action:"update", version, confirm:true});
+    if(r.job) mcuWatch(r.job);
+    else if(r.error) uiAlert(r.error);
+  }catch(e){ if(!(e instanceof AuthError)) uiAlert(e.message); }
+}
+let mcuPoll=null;
+function mcuWatch(id){
+  clearTimeout(mcuPoll);
+  const render = async ()=>{
+    let j;
+    try{ j = await api("/api/job/"+id); }catch(e){ return; }
+    const log = `<pre style="white-space:pre-wrap;background:var(--sunken);padding:10px;border-radius:6px;font:12px var(--mono);max-height:320px;overflow:auto">${esc(j.name+"\n\n"+j.lines.join("\n")+(j.done?(j.ok?"\n[done]":"\n[failed]"):"\n…"))}</pre>`;
+    $("mcuBody").innerHTML = `<p class="warn" style="margin-top:0"><b>${esc(j.name)}…</b> flashing the MCU — don't power the robot off.</p>`+log;
+    if(j.done){ clearTimeout(mcuPoll); setTimeout(loadMcu, 800); }
+    else mcuPoll = setTimeout(render, 1000);
+  };
+  render();
 }
 
 /* ---- settings ---- */
@@ -798,6 +1133,32 @@ function renderSettings(s){
   $("ws-note").textContent = w.installed
     ? `Runs this page as a systemd service on port ${w.port||"?"}, started at every boot.`
     : `Runs this page as a systemd service, started at every boot. Right now it was started by hand on port ${s.port}.`;
+  if(s.version) $("upd-cur").textContent = "v"+s.version;
+}
+async function updateCheck(){
+  const note = $("upd-note"); note.className="note"; note.textContent = "checking GitHub…";
+  $("upd-check").disabled = true;
+  try{
+    const r = await api("/api/update");
+    $("upd-latest").textContent = r.latest ? "v"+r.latest : "—";
+    if(r.error){ note.className="warn"; note.textContent = r.error; $("upd-apply").disabled = true; }
+    else if(r.update_available){ note.className="ok"; note.textContent = "update available"; $("upd-apply").disabled = false; }
+    else { note.className="note"; note.textContent = "up to date"; $("upd-apply").disabled = true; }
+  }catch(e){ if(!(e instanceof AuthError)){ note.className="bad"; note.textContent = e.message; } }
+  finally{ $("upd-check").disabled = false; }
+}
+async function updateApply(force){
+  if(!(await uiConfirm("Pull the latest tool from GitHub and restart the web service?\n\nThe page will reconnect by itself after the restart.", {ok:"Update"}))) return;
+  const out = $("upd-out"); out.style.display="block"; out.textContent = "updating…";
+  $("upd-apply").disabled = true;
+  try{
+    const r = await api("/api/update","POST",{confirm:true, force:!!force});
+    out.textContent = (r.lines||[]).join("\n") + (r.version ? "\nnow v"+r.version : "");
+    if(r.restarting){
+      $("upd-note").className="ok"; $("upd-note").textContent = "updated to v"+r.version+" — service restarting, reconnecting…";
+      setTimeout(()=>location.reload(), 4000);
+    }
+  }catch(e){ if(!(e instanceof AuthError)){ out.textContent = "error: "+e.message; } }
 }
 async function changePassword(e){
   e.preventDefault(); const m = $("pwmsg"); m.className="note";
@@ -826,14 +1187,14 @@ function reconnect(){
     catch(e){ if(n>30) clearInterval(t); }
   }, 1500);
 }
-function toggleGuardian(){
+async function toggleGuardian(){
   const on = !$("g-sw").classList.contains("on");
-  if(!on && !confirm("Switch the guardian off? Without it an OTA update can lock you out (root password and SSH reset).")) return;
+  if(!on && !(await uiConfirm("Switch the guardian off? Without it an OTA update can lock you out (root password and SSH reset).", {danger:true, ok:"Switch off"}))) return;
   setSwitch("/api/guardian", on);
 }
-function toggleWebservice(){
+async function toggleWebservice(){
   const on = !$("ws-sw").classList.contains("on");
-  if(!on && !confirm("Switch the web UI service off? If this page is served by it, the page goes offline until you run ./start.sh on the robot.")) return;
+  if(!on && !(await uiConfirm("Switch the web UI service off? If this page is served by it, the page goes offline until you run ./start.sh on the robot.", {danger:true, ok:"Switch off"}))) return;
   setSwitch("/api/webservice", on);
 }
 
@@ -874,7 +1235,7 @@ async function applyNetwork(){
   finally{ $("net-apply").disabled = false; }
 }
 async function stopNetwork(){
-  if(!confirm("Stop WiFi (AP and STA) on wlan0?")) return;
+  if(!(await uiConfirm("Stop WiFi (AP and STA) on wlan0?", {ok:"Stop WiFi"}))) return;
   $("net-msg").textContent = "stopping…"; $("net-out").textContent = "";
   try{
     const r = await api("/api/network","POST",{action:"stop"});

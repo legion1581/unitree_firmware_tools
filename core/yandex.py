@@ -27,21 +27,22 @@ def _get(url, timeout):
     return urllib.request.urlopen(req, timeout=timeout)
 
 
-def _direct_url(public_link, path=None):
+def _direct_url(public_link, path=None, timeout=30):
     params = {"public_key": public_link}
     if path:
         params["path"] = path
     try:
-        with _get(API + "?" + urllib.parse.urlencode(params), 30) as r:
+        with _get(API + "?" + urllib.parse.urlencode(params), timeout) as r:
             return json.loads(r.read())["href"]
     except urllib.error.HTTPError as e:
         raise RuntimeError(f"Yandex API error {e.code}: {e.read()[:200]!r}")
 
 
-def fetch_json(public_link, path=None):
-    """Download a small JSON resource (e.g. manifest.json) into a dict."""
-    url = _direct_url(public_link, path)
-    with _get(url, 60) as r:
+def fetch_json(public_link, path=None, timeout=30):
+    """Download a small JSON resource (e.g. manifest.json) into a dict.
+    `timeout` bounds each of the two HTTP calls (keep it small for UI listings)."""
+    url = _direct_url(public_link, path, timeout=timeout)
+    with _get(url, timeout) as r:
         return json.loads(r.read())
 
 
